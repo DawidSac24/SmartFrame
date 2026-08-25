@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Frame</title>
+    <style>
+        body { font-family: sans-serif; background: #121212; color: #ffffff; text-align: center; padding: 50px; }
+        button { background: #0070f3; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; }
+        button:active { background: #005bb5; }
+    </style>
+</head>
+<body>
+    <h1>Smart Frame Control</h1>
+    <p id="status">Status: Waiting...</p>
+    <button onclick="testClick()">Click Me</button>
+    <a href="/login">Connect to Spotify</a>
+
+    <script>
+        function testClick() {
+            document.getElementById("status").innerText = "Status: Button Clicked!";
+            console.log("JavaScript is working perfectly.");
+        }
+
+        function spotifyClick() {
+            window.location.href = "/spotify";
+        }
+    </script>
+</body>
+</html>
