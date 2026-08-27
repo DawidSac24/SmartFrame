@@ -18,11 +18,14 @@
 #include "api_weather.h"
 #include "cli.h"
 #include "secrets.h"
+#include "display_hal.h"
 
 void app_main(void)
 {
   esp_err_t ret = nvs_hal_init();
   ESP_ERROR_CHECK(ret);
+
+  display_hal_init();
 
   app_state_init();
   cli_init();

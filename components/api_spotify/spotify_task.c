@@ -1,6 +1,8 @@
 #include "api_spotify.h"
 #include "spotify_prv.h"
 
+#include "esp_log.h"
+
 #include "app_state.h"
 #include "wifi.h"
 
