@@ -20,7 +20,8 @@ esp_err_t api_weather_fetch(struct localisation *localisation)
     esp_http_client_config_t config = {
         .url = url_buffer,
         .method = HTTP_METHOD_GET,
-        .crt_bundle_attach = esp_crt_bundle_attach, // Automatically verifies SSL certificates
+        .crt_bundle_attach = esp_crt_bundle_attach,
+        .timeout_ms = 15000,
     };
 
     esp_http_client_handle_t client = esp_http_client_init(&config);
@@ -63,6 +64,32 @@ esp_err_t api_weather_fetch(struct localisation *localisation)
     }
 
     json_buffer[total_read_len] = '\0';
+
+json_buffer[total_read_len] = '\0';
+
+    // Check if the API actually gave us a 200 OK
+    int status_code = esp_http_client_get_status_code(client);
+    if (status_code != 200)
+    {
+        ESP_LOGE(TAG, "API Rejected Request! HTTP Status: %d", status_code);
+        ESP_LOGE(TAG, "API Response: %s", json_buffer); // This will tell us what's wrong!
+        err = ESP_FAIL;
+    }
+    else
+    {
+        ESP_LOGI(TAG, "Successfully downloaded %d bytes.", total_read_len);
+        err = api_weather_parse(json_buffer);
+        
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG, "Failed to parse weather data: %s", esp_err_to_name(err));
+        } else {
+            ESP_LOGI(TAG, "Weather data fetched and parsed successfully.");
+        }
+    }
+
+    free(json_buffer);
+    esp_http_client_cleanup(client);
+    return err;
 
     ESP_LOGD(TAG, "Successfully downloaded %d bytes.", total_read_len);
     ESP_LOGD(TAG, "JSON Response: %s", json_buffer);

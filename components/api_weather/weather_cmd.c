@@ -36,8 +36,7 @@ static esp_err_t cmd_weather(int argc, char **argv)
     return 0;
 }
 
-// Update the registration function to just "weather"
-static void register_weather_commands(void)
+void weather_cmd_register(void)
 {
     esp_console_cmd_t cmd = {
         .command = "weather",
@@ -48,24 +47,24 @@ static void register_weather_commands(void)
     esp_console_cmd_register(&cmd);
 }
 
-void weather_cmd_register(void)
-{
-    esp_console_cmd_t fetch_cmd = {
-        .command = "weather_fetch",
-        .help = "Fetches the current weather from the API and updates the global state",
-        .hint = NULL,
-        .func = &weather_cmd_fetch,
-    };
-    esp_console_cmd_register(&fetch_cmd);
-
-    esp_console_cmd_t print_cmd = {
-        .command = "weather_print",
-        .help = "Prints the current weather from the global state",
-        .hint = NULL,
-        .func = &weather_cmd_print,
-    };
-    esp_console_cmd_register(&print_cmd);
-}
+// void weather_cmd_register(void)
+// {
+//     esp_console_cmd_t fetch_cmd = {
+//         .command = "weather_fetch",
+//         .help = "Fetches the current weather from the API and updates the global state",
+//         .hint = NULL,
+//         .func = &weather_cmd_fetch,
+//     };
+//     esp_console_cmd_register(&fetch_cmd);
+//
+//     esp_console_cmd_t print_cmd = {
+//         .command = "weather_print",
+//         .help = "Prints the current weather from the global state",
+//         .hint = NULL,
+//         .func = &weather_cmd_print,
+//     };
+//     esp_console_cmd_register(&print_cmd);
+// }
 
 esp_err_t weather_cmd_fetch(int argc, char **argv)
 {

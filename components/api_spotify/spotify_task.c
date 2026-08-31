@@ -6,8 +6,6 @@
 #include "app_state.h"
 #include "wifi.h"
 
-static const char *TAG = "spotify_api";
-
 static QueueHandle_t auth_code_queue;
 
 void api_spotify_task(void *pvParameters);
