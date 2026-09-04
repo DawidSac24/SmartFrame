@@ -54,7 +54,7 @@ void api_weather_task(void *pvParameters)
             ESP_LOGE(TAG, "Failed to fetch weather data: %s", esp_err_to_name(err));
         }
 
-        ESP_LOGW("memory", "Weather Task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
+        ESP_LOGW(TAG, "Weather Task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
         vTaskDelay(TASK_DELAY); // Delay for 20 minutes
     }
 }

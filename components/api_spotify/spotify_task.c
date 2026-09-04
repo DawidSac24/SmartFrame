@@ -6,44 +6,37 @@
 #include "app_state.h"
 #include "wifi.h"
 
-static QueueHandle_t auth_code_queue;
+#define POLL_DELAY pdMS_TO_TICKS(3000) // 3s
 
+// private variables
+static const char *TAG = "spotify_task";
+
+// private functions
 void api_spotify_task(void *pvParameters);
 
 TaskHandle_t api_spotify_start_task(void)
 {
-    auth_code_queue = xQueueCreate(1, 350 * sizeof(char));
+  spotify_auth_init();
 
-    return ESP_OK;
+  return ESP_OK;
 }
 
 void api_spotify_delete_task(TaskHandle_t task_handle)
 {
-    if (task_handle != NULL)
-    {
-        vTaskDelete(task_handle);
-    }
+  if (task_handle != NULL)
+  {
+    vTaskDelete(task_handle);
+  }
 }
 
 void api_spotify_task(void *pvParameters)
 {
-}
+  static char access_token[TOKEN_BUFF_SIZE];
+  while (1)
+  {
+    spotify_auth_get_access_token(access_token, sizeof(access_token));
 
-esp_err_t api_spotify_send_auth_code(const char *auth_code)
-{
-    if (auth_code_queue == NULL)
-    {
-        return ESP_FAIL;
-    }
-
-    if (xQueueSend(auth_code_queue, auth_code, 0) == pdPASS)
-    {
-        ESP_LOGI("SPOTIFY", "Auth code successfully injected into Queue!");
-        return ESP_OK;
-    }
-    else
-    {
-        ESP_LOGE("SPOTIFY", "Queue full! Auth code dropped.");
-        return ESP_ERR_TIMEOUT;
-    }
+    ESP_LOGW(TAG, "Spotify task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
+    vTaskDelay(POLL_DELAY); // Delay for 3s
+  }
 }

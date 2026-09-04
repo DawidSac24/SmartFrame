@@ -21,7 +21,7 @@
   },
   "idf.openOcdConfigs": ["board/esp32s3-builtin.cfg"],
   "idf.portWin": "COM8",
-  "idf.currentSetup": "C:\\esp\\v6.0.2\\esp-idf",
+  "idf.currentSetup": "/home/dawid/.espressif/v6.1/esp-idf",
   "idf.customExtraVars": {
     "IDF_TARGET": "esp32s3"
   },

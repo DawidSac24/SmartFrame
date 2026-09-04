@@ -2,7 +2,27 @@
 
 #include "esp_err.h"
 
-esp_err_t api_spotify_get_refresh_token();
-esp_err_t api_spotify_fetch_access_token();
+#define TOKEN_BUFF_SIZE 256
 
-esp_err_t api_spotify_parse_tokens();
+// authentification
+void spotify_auth_init(void);
+esp_err_t spotify_auth_get_token(char *out_token, size_t max_len);
+esp_err_t spotify_auth_handle_callback(const char *code);
+
+// client
+struct spotify_token_response
+{
+    char access_token[TOKEN_BUFF_SIZE];
+    char refresh_token[TOKEN_BUFF_SIZE];
+    int expires_in_sec;
+    bool has_new_refresh_token;
+};
+
+esp_err_t spotify_client_exchange_code(const char *auth_code, const char *auth_header,
+                                       struct spotify_token_response *response);
+esp_err_t spotify_client_refresh_token(const char *refresh_token, const char *auth_header,
+                                       struct spotify_token_response *response);
+
+// storage
+esp_err_t spotify_storage_get_refresh_token(char *out_token);
+esp_err_t spotify_storage_set_refresh_token(char *token);
