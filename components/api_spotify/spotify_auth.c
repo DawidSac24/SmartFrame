@@ -2,16 +2,11 @@
 
 #include "secrets.h"
 
+#include "esp_log.h"
 #include <mbedtls/base64.h>
 #include <string.h>
-#include <freertos/FreeRTOS.h>
-#include "esp_http_client.h"
-#include "esp_crt_bundle.h"
-#include "cJSON.h"
-#include "esp_log.h"
-#include <string.h>
-
-static const char *TAG = "spotify_client";
+#include "freertos/FreeRTOS.h"
+#include "esp_timer.h"
 
 // private variables
 static const char *TAG = "spotify_auth";
@@ -30,9 +25,6 @@ static struct spotify_auth_state
 esp_err_t spotify_auth_refresh_token();
 bool spotify_auth_poll_auth_code(char *out_code);
 esp_err_t spotify_auth_exchange_code(char *auth_code, size_t len);
-
-// esp_err_t spotify_auth_get_refresh_token(char *out_token);
-// esp_err_t spotify_auth_exchange_token(const char *code);
 
 void spotify_auth_init(void)
 {
@@ -56,7 +48,7 @@ void spotify_auth_init(void)
   snprintf(g_auth_state.auth_header, sizeof(g_auth_state), "Basic %s",
            (char *)base64_buf);
 
-  esp_err_t refresh_token_found = spotify_storage_get_refresh_token(&g_auth_state.refresh_token);
+  esp_err_t refresh_token_found = spotify_storage_get_refresh_token(g_auth_state.refresh_token, sizeof(char) * TOKEN_BUFF_SIZE);
   if (refresh_token_found != ESP_OK)
   {
     ESP_LOGW(TAG, "spotify refresh token not found in memory");
@@ -71,6 +63,7 @@ esp_err_t spotify_auth_get_token(char *out_token, size_t max_len)
   if (esp_timer_get_time() + (g_auth_state.expires_at * 1000000))
   {
     ESP_LOGI(TAG, "access token is not expired, passing the cached token");
+    strcpy(out_token, g_auth_state.access_token);
   }
   else if (g_auth_state.has_refresh_token)
   {
@@ -78,11 +71,9 @@ esp_err_t spotify_auth_get_token(char *out_token, size_t max_len)
     esp_err_t res = spotify_auth_refresh_token();
 
     if (res != ESP_OK)
-    {
-      ESP_LOGE(TAG, "failed to refresh the access token");
       return res;
-    }
     ESP_LOGI(TAG, "access token refreshed successfully");
+    return ESP_OK;
   }
   else
   {
@@ -99,41 +90,62 @@ esp_err_t spotify_auth_get_token(char *out_token, size_t max_len)
     esp_err_t res = spotify_auth_exchange_code(auth_code, sizeof(auth_code));
 
     if (res != ESP_OK)
-    {
-      ESP_LOGE(TAG, "failed the token exchange");
       return res;
-    }
-    ESP_LOGI(TAG, "token exchanged successfully");
   }
-
-  strcpy(out_token, g_auth_state.access_token);
   return ESP_OK;
 }
 
 esp_err_t spotify_auth_refresh_token()
 {
-  return ESP_FAIL;
+  struct spotify_token_response response;
+
+  esp_err_t res = spotify_client_refresh_token(g_auth_state.refresh_token,
+                                               g_auth_state.auth_header, &response);
+
+  if (res != ESP_OK)
+    return res;
+
+  strcpy(response.access_token, g_auth_state.access_token);
+  g_auth_state.expires_at = response.expires_in_sec;
+
+  if (response.has_new_refresh_token)
+  {
+    strcpy(response.refresh_token, g_auth_state.refresh_token);
+    g_auth_state.has_refresh_token = true;
+    spotify_storage_set_refresh_token(response.refresh_token);
+  }
+
+  return ESP_OK;
+}
+
+esp_err_t spotify_auth_exchange_code(char *auth_code, size_t len)
+{
+  struct spotify_token_response response;
+
+  esp_err_t res = spotify_client_exchange_code(auth_code, g_auth_state.auth_header,
+                                               &response);
+
+  if (res == ESP_OK)
+    return res;
+
+  strcpy(response.access_token, g_auth_state.access_token);
+  strcpy(response.refresh_token, g_auth_state.refresh_token);
+  g_auth_state.expires_at = response.expires_in_sec;
+  g_auth_state.has_refresh_token = true;
+  spotify_storage_set_refresh_token(response.refresh_token);
+
+  return ESP_OK;
+}
+
+esp_err_t spotify_auth_send_code(const char *auth_code)
+{
+  return xQueueSend(g_auth_state.auth_code_queue, auth_code, 0);
 }
 
 bool spotify_auth_poll_auth_code(char *out_code)
 {
   return xQueueCRReceive(g_auth_state.auth_code_queue, out_code, portMAX_DELAY);
 }
-esp_err_t spotify_auth_exchange_code(char *auth_code, size_t len)
-{
-  struct spotify_token_response response;
-
-  esp_err_t result = spotify_client_exchange_code(auth_code, g_auth_state.auth_header,
-                                                  &response);
-    if (result != ESP_OK) {
-      return result;
-    }
-
-
-}
-
-// esp_err_t spotify_auth_get_refresh_token(char *out_token) { return ESP_FAIL; }
-// esp_err_t spotify_auth_exchange_token(const char *code) { return ESP_FAIL; }
 
 esp_err_t spotify_auth_handle_callback(const char *code)
 {

@@ -12,17 +12,18 @@
 #include "esp_sntp.h"
 
 #include "wifi.h"
-#include "nvs_hal.h"
+#include "storage.h"
 #include "web_server.h"
 #include "app_state.h"
 #include "api_weather.h"
 #include "cli.h"
 #include "secrets.h"
 #include "display_hal.h"
+#include "api_spotify.h"
 
 void app_main(void)
 {
-  esp_err_t ret = nvs_hal_init();
+  esp_err_t ret = storage_init();
   ESP_ERROR_CHECK(ret);
 
   display_hal_init();
@@ -46,4 +47,5 @@ void app_main(void)
   tzset();
 
   api_weather_start_task(LONGITUDE, LATITUDE);
+  api_spotify_start_task();
 }

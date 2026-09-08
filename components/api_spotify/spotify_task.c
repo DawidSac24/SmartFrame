@@ -34,9 +34,21 @@ void api_spotify_task(void *pvParameters)
   static char access_token[TOKEN_BUFF_SIZE];
   while (1)
   {
-    spotify_auth_get_access_token(access_token, sizeof(access_token));
+    spotify_auth_get_token(access_token, sizeof(access_token));
 
     ESP_LOGW(TAG, "Spotify task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
     vTaskDelay(POLL_DELAY); // Delay for 3s
   }
+}
+
+esp_err_t api_spotify_send_auth_code(const char *auth_code)
+{
+  esp_err_t res = spotify_auth_send_code(auth_code);
+
+  if (res == ESP_OK)
+    ESP_LOGI(TAG, "Spotify authentification code sent successfully.");
+  else
+    ESP_LOGE(TAG, "Failed to send authentification code: %s", esp_err_to_name(res));
+
+  return res;
 }
