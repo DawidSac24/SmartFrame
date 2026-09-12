@@ -18,6 +18,8 @@ TaskHandle_t api_spotify_start_task(void)
 {
   spotify_auth_init();
 
+  spotify_cmd_register();
+
   return ESP_OK;
 }
 
@@ -31,12 +33,12 @@ void api_spotify_delete_task(TaskHandle_t task_handle)
 
 void api_spotify_task(void *pvParameters)
 {
-  static char access_token[TOKEN_BUFF_SIZE];
   while (1)
   {
-    spotify_auth_get_token(access_token, sizeof(access_token));
+    spotify_auth_fetch_token();
+    
 
-    ESP_LOGW(TAG, "Spotify task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
+
     vTaskDelay(POLL_DELAY); // Delay for 3s
   }
 }

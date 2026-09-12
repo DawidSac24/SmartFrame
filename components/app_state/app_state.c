@@ -20,9 +20,7 @@ void app_state_init(void)
     global_state.weather.last_fetched = 0;
 
     // SPOTIFY
-    global_state.spotify.refresh_token[0] = '\0';
-    global_state.spotify.access_token[0] = '\0';
-    global_state.spotify.last_token_fetch = 0;
+
 
     // TODO
 }

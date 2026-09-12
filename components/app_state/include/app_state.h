@@ -4,8 +4,6 @@
 #include "freertos/task.h"
 #include <time.h>
 
-#define TOKEN_BUFFER_SIZE 512
-
 enum task_priority_level
 {
     PRIO_IDLE,
@@ -35,9 +33,8 @@ struct weather_data
 
 struct spotify_data
 {
-    char refresh_token[TOKEN_BUFFER_SIZE];
-    char access_token[TOKEN_BUFFER_SIZE];
-    time_t last_token_fetch;
+    
+    time_t last_track_fetch;
 };
 
 enum app_mode

@@ -58,12 +58,11 @@ void spotify_auth_init(void)
   g_auth_state.has_refresh_token = true;
 }
 
-esp_err_t spotify_auth_get_token(char *out_token, size_t max_len)
+esp_err_t spotify_auth_fetch_token()
 {
   if (esp_timer_get_time() + (g_auth_state.expires_at * 1000000))
   {
     ESP_LOGI(TAG, "access token is not expired, passing the cached token");
-    strcpy(out_token, g_auth_state.access_token);
   }
   else if (g_auth_state.has_refresh_token)
   {
@@ -73,7 +72,6 @@ esp_err_t spotify_auth_get_token(char *out_token, size_t max_len)
     if (res != ESP_OK)
       return res;
     ESP_LOGI(TAG, "access token refreshed successfully");
-    return ESP_OK;
   }
   else
   {
@@ -133,6 +131,18 @@ esp_err_t spotify_auth_exchange_code(char *auth_code, size_t len)
   g_auth_state.expires_at = response.expires_in_sec;
   g_auth_state.has_refresh_token = true;
   spotify_storage_set_refresh_token(response.refresh_token);
+
+  return ESP_OK;
+}
+
+esp_err_t spotify_auth_get_token_state(struct spotify_auth_token_state *token_state)
+{
+  if (!g_auth_state.has_refresh_token)
+    return ESP_ERR_INVALID_STATE;
+
+  strcpy(g_auth_state.access_token, token_state->access_token);
+  strcpy(g_auth_state.refresh_token, token_state->refresh_token);
+  token_state->expires_at = g_auth_state.expires_at;
 
   return ESP_OK;
 }
