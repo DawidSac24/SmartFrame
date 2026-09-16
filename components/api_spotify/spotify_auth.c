@@ -154,7 +154,7 @@ esp_err_t spotify_auth_send_code(const char *auth_code)
 
 bool spotify_auth_poll_auth_code(char *out_code)
 {
-  return xQueueCRReceive(g_auth_state.auth_code_queue, out_code, portMAX_DELAY);
+  return xQueueReceive(g_auth_state.auth_code_queue, out_code, portMAX_DELAY);
 }
 
 esp_err_t spotify_auth_handle_callback(const char *code)

@@ -1,3 +1,4 @@
+#include "api_weather.h"
 #include "weather_priv.h"
 
 #include "app_state.h"
@@ -9,32 +10,9 @@
 
 static const char *TAG = "weather_cmd";
 
+static esp_err_t cmd_weather(int argc, char **argv);
 esp_err_t weather_cmd_fetch(int argc, char **argv);
 esp_err_t weather_cmd_print(int argc, char **argv);
-
-static esp_err_t cmd_weather(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        ESP_LOGE(TAG, "No argument provided. Use 'print' or 'fetch'.");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (strcmp(argv[1], "print") == 0)
-    {
-        return weather_cmd_print(0, NULL);
-    }
-    else if (strcmp(argv[1], "fetch") == 0)
-    {
-        return weather_cmd_fetch(argc, argv);
-    }
-    else
-    {
-        printf("Error: Unknown argument '%s'\n", argv[1]);
-    }
-
-    return 0;
-}
 
 void weather_cmd_register(void)
 {
@@ -45,42 +23,65 @@ void weather_cmd_register(void)
         .func = &cmd_weather,
     };
     esp_console_cmd_register(&cmd);
+
+    weather_cmd_queue = xQueueCreate(WEATHER_CMD_MAX, sizeof(enum weather_cmd));
 }
 
-// void weather_cmd_register(void)
-// {
-//     esp_console_cmd_t fetch_cmd = {
-//         .command = "weather_fetch",
-//         .help = "Fetches the current weather from the API and updates the global state",
-//         .hint = NULL,
-//         .func = &weather_cmd_fetch,
-//     };
-//     esp_console_cmd_register(&fetch_cmd);
-//
-//     esp_console_cmd_t print_cmd = {
-//         .command = "weather_print",
-//         .help = "Prints the current weather from the global state",
-//         .hint = NULL,
-//         .func = &weather_cmd_print,
-//     };
-//     esp_console_cmd_register(&print_cmd);
-// }
+void weather_cmd_send(enum weather_cmd cmd)
+{
+    if (weather_cmd_queue != NULL)
+    {
+        xQueueSend(weather_cmd_queue, &cmd, 0);
+    }
+}
+
+void weather_cmd_dispatch(enum weather_cmd cmd)
+{
+    switch (cmd)
+    {
+    case WEATHER_CMD_FETCH:
+        weather_cmd_fetch(0, NULL);
+        break;
+    case WEATHER_CMD_PRINT:
+        weather_cmd_print(0, NULL);
+        break;
+    default:
+        ESP_LOGE(TAG, "Unknown command received: %d", cmd);
+        break;
+    }
+}
+
+esp_err_t cmd_weather(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        ESP_LOGE(TAG, "No argument provided. Use 'print' or 'fetch'.");
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    if (strcmp(argv[1], "print") == 0)
+    {
+        weather_cmd_send(WEATHER_CMD_PRINT);
+    }
+    else if (strcmp(argv[1], "fetch") == 0)
+    {
+        weather_cmd_send(WEATHER_CMD_FETCH);
+    }
+    else
+    {
+        printf("Error: Unknown argument '%s'\n", argv[1]);
+    }
+
+    return ESP_OK;
+}
 
 esp_err_t weather_cmd_fetch(int argc, char **argv)
 {
     ESP_LOGI(TAG, "Forcing a manual weather fetch...");
 
     struct localisation loc;
-    if (argc >= 4)
-    {
-        loc.latitude = atof(argv[2]);
-        loc.longitude = atof(argv[3]);
-    }
-    else
-    {
-        loc.latitude = LATITUDE;
-        loc.longitude = LONGITUDE;
-    }
+    loc.latitude = LATITUDE;
+    loc.longitude = LONGITUDE;
 
     esp_err_t err = api_weather_fetch(&loc);
     if (err != ESP_OK)

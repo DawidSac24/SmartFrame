@@ -33,5 +33,14 @@
     "--background-index"
   ],
   "idf.monitorPort": "COM8",
-  "idf.flashType": "JTAG"
+  "idf.flashType": "JTAG",
+  "editor.formatOnPaste": false,
+  "editor.defaultFormatter": "espressif.esp-idf-extension",
+  "editor.formatOnSave": true,
+  "[cpp]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  },
+  "[c]": {
+    "editor.defaultFormatter": "ms-vscode.cpptools"
+  }
 }

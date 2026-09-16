@@ -4,11 +4,11 @@
 #include "app_state.h"
 #include "wifi.h"
 
-#define TASK_DELAY pdMS_TO_TICKS(1200000) // 20 minutes in milliseconds
-
 static const char *TAG = "weather_api";
 
 static struct localisation s_localisation;
+
+QueueHandle_t weather_cmd_queue = NULL;
 
 void api_weather_task(void *pvParameters);
 
@@ -43,18 +43,37 @@ void api_weather_delete_task(TaskHandle_t task_handle)
 void api_weather_task(void *pvParameters)
 {
     struct localisation *localisation = (struct localisation *)pvParameters;
+
+    TickType_t current_delay = 0;
+    const TickType_t POLL_INTERVAL_MS = pdMS_TO_TICKS(20 * 60 * 1000);
+
     while (1)
     {
         // Wait for Wi-Fi connection before proceeding
         wait_for_wifi_connection(portMAX_DELAY);
 
-        esp_err_t err = api_weather_fetch(localisation);
-        if (err != ESP_OK)
-        {
-            ESP_LOGE(TAG, "Failed to fetch weather data: %s", esp_err_to_name(err));
-        }
+        enum weather_cmd incoming_cmd;
 
-        ESP_LOGW(TAG, "Weather Task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
-        vTaskDelay(TASK_DELAY); // Delay for 20 minutes
+        if (xQueueReceive(weather_cmd_queue, &incoming_cmd, current_delay))
+        {
+            weather_cmd_dispatch(incoming_cmd);
+
+            // User requested a fetch, reset the delay to standard interval after processing the command
+            if (incoming_cmd == WEATHER_CMD_FETCH)
+            {
+                current_delay = POLL_INTERVAL_MS;
+            }
+        }
+        else
+        {
+            esp_err_t err = api_weather_fetch(localisation);
+            if (err != ESP_OK)
+            {
+                ESP_LOGE(TAG, "Failed to fetch weather data: %s", esp_err_to_name(err));
+            }
+
+            ESP_LOGW(TAG, "Weather Task free stack: %d bytes", uxTaskGetStackHighWaterMark(NULL));
+            current_delay = POLL_INTERVAL_MS;
+        }
     }
 }
