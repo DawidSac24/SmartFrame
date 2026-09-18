@@ -60,8 +60,9 @@ esp_err_t sp_cmd_fetch_track(int argc, char **argv)
 
 esp_err_t sp_cmd_clear(int argc, char **argv)
 {
+    // TODO: finish the clear function
     sp_storage_set_refresh_token("");
-    return ESP_OK;
+    return ESP_ERR_NOT_SUPPORTED;
 }
 
 esp_err_t sp_cmd_print(int argc, char **argv)

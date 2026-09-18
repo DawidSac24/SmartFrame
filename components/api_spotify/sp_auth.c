@@ -67,7 +67,7 @@ esp_err_t sp_auth_is_valid(void)
 
 esp_err_t sp_auth_ensure_valid(void)
 {
-  if (strlen(g_auth_state.access_token) > 0 && esp_timer_get_time() < g_auth_state.expires_at)
+  if (sp_auth_is_valid() == ESP_OK)
   {
     return ESP_OK;
   }

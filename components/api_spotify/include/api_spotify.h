@@ -13,6 +13,6 @@ struct spotify_track_dto
 };
 
 esp_err_t spotify_init(void);
-esp_err_t spotify_get_current_state(struct spotify_track_dto *out_state);
+esp_err_t spotify_get_track_info(struct spotify_track_dto *out_state);
 
 esp_err_t spotify_send_auth_code(const char *auth_code);
