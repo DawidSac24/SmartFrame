@@ -47,5 +47,5 @@ void app_main(void)
   tzset();
 
   api_weather_start_task(LONGITUDE, LATITUDE);
-  api_spotify_start_task();
+  spotify_init();
 }

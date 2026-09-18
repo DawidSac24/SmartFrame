@@ -1,4 +1,6 @@
-#include "spotify_prv.h"
+#include "sp_client.h"
+#include "sp_types.h"
+#include "sp_parse.h"
 
 #include "http_client.h"
 
@@ -10,10 +12,52 @@
 static const char *TAG = "spotify_client";
 
 esp_err_t spotify_client_request_tokens(const char *body, const char *auth_header,
-                                        struct spotify_token_response *out_response);
+                                        struct sp_token_response *out_response);
 
-esp_err_t spotify_client_exchange_code(const char *auth_code, const char *auth_header,
-                                       struct spotify_token_response *out_response)
+esp_err_t sp_client_fetch_track(const char *access_token, struct sp_track_info *out)
+{
+    if (access_token == NULL || out == NULL)
+        return ESP_ERR_INVALID_ARG;
+
+    char auth_header[512];
+    snprintf(auth_header, sizeof(auth_header), "Bearer %s", access_token);
+
+    const char *url = "https://api.spotify.com/v1/me/player/currently-playing";
+
+    char *http_response = NULL;
+    int status_code = 0;
+
+    esp_err_t http_result = http_client_request(url, HTTP_CLIENT_GET, auth_header,
+                                                "application/json", NULL,
+                                                &http_response, &status_code);
+
+    if (http_result != ESP_OK || status_code != 200)
+    {
+        ESP_LOGE(TAG, "Track request failed! HTTP Status: %d", status_code);
+        if (http_response != NULL)
+        {
+            ESP_LOGE(TAG, "Spotify Response: %s", http_response);
+            free(http_response);
+        }
+        return (http_result == ESP_OK) ? ESP_ERR_INVALID_RESPONSE : http_result;
+    }
+
+    esp_err_t parse_result = sp_parse_track(http_response, out);
+    if (parse_result != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to parse JSON response: %s", esp_err_to_name(parse_result));
+    }
+
+    if (http_response != NULL)
+    {
+        free(http_response);
+    }
+
+    return parse_result;
+}
+
+esp_err_t sp_client_exchange_code(const char *auth_code, const char *auth_header,
+                                  struct sp_token_response *out_response)
 {
     char body[HTTP_REQUEST_BODY_BUFF_SIZE];
     snprintf(body, sizeof(body),
@@ -33,8 +77,8 @@ esp_err_t spotify_client_exchange_code(const char *auth_code, const char *auth_h
     return ESP_OK;
 }
 
-esp_err_t spotify_client_refresh_token(const char *refresh_token, const char *auth_header,
-                                       struct spotify_token_response *out_response)
+esp_err_t sp_client_refresh_token(const char *refresh_token, const char *auth_header,
+                                  struct sp_token_response *out_response)
 {
     char body[HTTP_REQUEST_BODY_BUFF_SIZE];
     snprintf(body, sizeof(body),
@@ -54,7 +98,7 @@ esp_err_t spotify_client_refresh_token(const char *refresh_token, const char *au
 }
 
 esp_err_t spotify_client_request_tokens(const char *body, const char *auth_header,
-                                        struct spotify_token_response *out_response)
+                                        struct sp_token_response *out_response)
 {
     const char *url = "https://accounts.spotify.com/api/token";
 
@@ -74,7 +118,7 @@ esp_err_t spotify_client_request_tokens(const char *body, const char *auth_heade
         return http_result;
     }
 
-    esp_err_t parse_result = spotify_parse_token_response(*http_response, out_response);
+    esp_err_t parse_result = sp_parse_token_response(*http_response, out_response);
     if (parse_result != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to parse JSON response: %s", esp_err_to_name(parse_result));

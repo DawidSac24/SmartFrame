@@ -52,7 +52,7 @@ static esp_err_t spotify_callback_handler(httpd_req_t *req)
 
         if (httpd_query_key_value(query_string, "code", auth_code, sizeof(auth_code)) == ESP_OK)
         {
-            esp_err_t err = api_spotify_send_auth_code(auth_code);
+            esp_err_t err = spotify_send_auth_code(auth_code);
 
             if (err == ESP_OK)
             {

@@ -17,12 +17,10 @@ TaskHandle_t api_weather_start_task(float latitude, float longitude)
     s_localisation.latitude = latitude;
     s_localisation.longitude = longitude;
 
-    BaseType_t returned;
-    TaskHandle_t task_handle = NULL;
-
     weather_cmd_register();
 
-    returned = xTaskCreatePinnedToCore(api_weather_task, "api_weather_task", 8192, &s_localisation, PRIO_WEATHER_API, &task_handle, 0);
+    TaskHandle_t task_handle = NULL;
+    BaseType_t returned = xTaskCreatePinnedToCore(api_weather_task, "api_weather_task", 8192, &s_localisation, PRIO_WEATHER_API, &task_handle, 0);
     if (returned != pdPASS)
     {
         ESP_LOGE(TAG, "Failed to create task!");

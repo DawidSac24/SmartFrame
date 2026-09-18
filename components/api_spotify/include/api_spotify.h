@@ -4,7 +4,15 @@
 #include "freertos/task.h"
 #include <stdint.h>
 
-TaskHandle_t api_spotify_start_task(void);
-void api_spotify_delete_task(TaskHandle_t task_handle);
+struct spotify_track_dto
+{
+    char track_name[64];
+    char artist_name[64];
+    bool is_playing;
+    bool has_new_art;
+};
 
-esp_err_t api_spotify_send_auth_code(const char *auth_code);
+esp_err_t spotify_init(void);
+esp_err_t spotify_get_current_state(struct spotify_track_dto *out_state);
+
+esp_err_t spotify_send_auth_code(const char *auth_code);

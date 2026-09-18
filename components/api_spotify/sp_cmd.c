@@ -1,13 +1,16 @@
-#include "spotify_prv.h"
+#include "sp_cmd.h"
+#include "sp_types.h"
+#include "sp_auth.h"
+#include "sp_storage.h"
 
 #include "esp_log.h"
 #include "esp_console.h"
 
 static const char *TAG = "spotify_cmd";
 
-esp_err_t spotify_cmd_fetch(int argc, char **argv);
+esp_err_t sp_cmd_fetch_track(int argc, char **argv);
 
-esp_err_t spotify_cmd_print(int argc, char **argv);
+esp_err_t sp_cmd_print(int argc, char **argv);
 
 static esp_err_t cmd_spotify(int argc, char **argv)
 {
@@ -19,11 +22,11 @@ static esp_err_t cmd_spotify(int argc, char **argv)
 
     if (strcmp(argv[1], "print") == 0)
     {
-        return spotify_cmd_print(0, NULL);
+        return sp_cmd_print(0, NULL);
     }
     else if (strcmp(argv[1], "fetch") == 0)
     {
-        return spotify_cmd_fetch(argc, argv);
+        return sp_cmd_fetch_track(argc, argv);
     }
     else
     {
@@ -33,7 +36,7 @@ static esp_err_t cmd_spotify(int argc, char **argv)
     return ESP_OK;
 }
 
-void spotify_cmd_register(void)
+void sp_cmd_register(void)
 {
     esp_console_cmd_t cmd = {
         .command = "spotify",
@@ -44,34 +47,28 @@ void spotify_cmd_register(void)
     esp_console_cmd_register(&cmd);
 }
 
-esp_err_t spotify_cmd_fetch(int argc, char **argv)
+esp_err_t sp_cmd_fetch_track(int argc, char **argv)
 {
-    if (argc < 3)
+    if (sp_auth_is_valid() != ESP_OK)
     {
-        ESP_LOGE(TAG, "fetch needs an argument. Use 'token' or 'track'.");
-        return ESP_ERR_INVALID_ARG;
+        ESP_LOGE(TAG, "Spotify authentication is not valid.");
+        return ESP_ERR_INVALID_STATE;
     }
 
-    if (strcmp(argv[2], "token") == 0)
-    {
-        return spotify_auth_fetch_token();
-    }
-    else if (strcmp(argv[2], "track") == 0)
-    {
-        return ESP_ERR_NOT_SUPPORTED;
-    }
-    else
-    {
-        printf("Error: Unknown argument '%s'\n", argv[2]);
-    }
     return ESP_OK;
 }
 
-esp_err_t spotify_cmd_print(int argc, char **argv)
+esp_err_t sp_cmd_clear(int argc, char **argv)
+{
+    sp_storage_set_refresh_token("");
+    return ESP_OK;
+}
+
+esp_err_t sp_cmd_print(int argc, char **argv)
 {
     printf("\n--- CURRENT SPOTIFY STATE ---\n");
-    struct spotify_auth_token_state token_state;
-    esp_err_t spotify_token_res = spotify_auth_get_token_state(&token_state);
+    struct sp_auth_token_state token_state;
+    esp_err_t spotify_token_res = sp_auth_get_token_state(&token_state);
     if (spotify_token_res != ESP_OK)
     {
         printf("Spotify Token unauthentificated");
