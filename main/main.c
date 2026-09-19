@@ -18,7 +18,7 @@
 #include "api_weather.h"
 #include "cli.h"
 #include "secrets.h"
-#include "display_hal.h"
+#include "hub75_hal.h"
 #include "api_spotify.h"
 
 void app_main(void)
@@ -26,7 +26,7 @@ void app_main(void)
   esp_err_t ret = storage_init();
   ESP_ERROR_CHECK(ret);
 
-  display_hal_init();
+  hub75_hal_init();
 
   app_state_init();
   cli_init();

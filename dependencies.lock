@@ -55,6 +55,6 @@ direct_dependencies:
 - espressif/mdns
 - idf
 - joltwallet/littlefs
-manifest_hash: 5deaf335075d822bfed991104b155c2a06f39ec357ddbfc135b5f414e6fd0f07
+manifest_hash: cd515f2873c1a449c16dd05eaf4bb506de5baf1bf0924b9cea1b9174513677db
 target: esp32s3
 version: 3.0.0
