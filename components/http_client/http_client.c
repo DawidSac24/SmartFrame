@@ -1,5 +1,7 @@
 #include "http_client.h"
 
+#include "storage.h"
+
 #include "esp_crt_bundle.h"
 #include "esp_log.h"
 
@@ -78,4 +80,43 @@ esp_err_t http_client_request(const char *url,
 
     esp_http_client_cleanup(client);
     return err;
+}
+
+esp_err_t http_client_download_file(const char *url, const char *filepath)
+{
+    esp_http_client_config_t config = {
+        .url = url,
+        .crt_bundle_attach = esp_crt_bundle_attach};
+
+    esp_http_client_handle_t client = esp_http_client_init(&config);
+
+    if (esp_http_client_open(client, 0) != ESP_OK)
+    {
+        esp_http_client_cleanup(client);
+        return ESP_FAIL;
+    }
+    esp_http_client_fetch_headers(client);
+
+    FILE *file = storage_open_stream(filepath, "wb");
+    if (file == NULL)
+    {
+        esp_http_client_cleanup(client);
+        return ESP_FAIL;
+    }
+
+    uint8_t buffer[1024];
+    int bytes_read;
+    int total_bytes = 0;
+
+    while ((bytes_read = esp_http_client_read(client, (char *)buffer, sizeof(buffer))) > 0)
+    {
+        storage_write_stream(file, buffer, bytes_read);
+        total_bytes += bytes_read;
+    }
+
+    storage_close_stream(file);
+    esp_http_client_cleanup(client);
+
+    ESP_LOGI("HTTP", "Download complete. Total bytes written: %d", total_bytes);
+    return ESP_OK;
 }

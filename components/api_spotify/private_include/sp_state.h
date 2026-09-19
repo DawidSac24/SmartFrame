@@ -7,3 +7,6 @@
 void sp_state_init(void);
 
 esp_err_t sp_state_set_track_info(const struct spotify_track_dto *track_info);
+
+const char *sp_api_state_to_str(enum sp_api_state state);
+const char *sp_cover_state_to_str(enum sp_cover_state_t state);

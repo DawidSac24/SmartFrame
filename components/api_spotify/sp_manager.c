@@ -8,6 +8,8 @@
 #include "sp_storage.h"
 #include "sp_cmd.h"
 
+#include "http_client.h"
+
 #include "esp_log.h"
 
 static const char *TAG = "spotify_manager";
@@ -57,25 +59,27 @@ esp_err_t sp_manager_fetch_and_save_track(void)
     struct spotify_track_dto last_track;
     spotify_get_track_info(&last_track);
 
-    if (strcmp(last_track.cover_url, new_track.cover_url) != 0)
+    if (strcmp(last_track.cover_url, new_track.cover_url) != 0 || last_track.cover_state == SP_COVER_FAILED)
     {
-        ESP_LOGI("MANAGER", "New track detected! Downloading album art...");
+        ESP_LOGI("MANAGER", "Downloading album art...");
+        new_track.cover_state = SP_COVER_DOWNLOADING;
+        sp_state_set_track_info(&new_track);
 
-        // esp_err_t dl_err = http_client_download_file(new_track.image_url, "/fs/album.jpg");
-        return ESP_ERR_NOT_SUPPORTED;
+        esp_err_t dl_err = http_client_download_file(new_track.cover_url, "/fs/album.jpg");
 
-        // if (dl_err == ESP_OK)
-        // {
-        //     new_track.has_new_art = true;
-        // }
-        // else
-        // {
-        //     ESP_LOGE(TAG, "Failed to download the track coverL: %s", esp_err_to_name(dl_err));
-        // }
+        if (dl_err == ESP_OK)
+        {
+            ESP_LOGI("MANAGER", "Album art saved to flash!");
+            new_track.cover_state = SP_COVER_NEW_FILE;
+        }
+        else
+        {
+            new_track.cover_state = SP_COVER_FAILED;
+        }
     }
     else
     {
-        new_track.has_new_cover = false;
+        new_track.cover_state = last_track.cover_state;
     }
 
     sp_state_set_track_info(&new_track);
@@ -158,6 +162,6 @@ esp_err_t sp_manager_print_track(void)
     ESP_LOGI(TAG, "track name: %s", track.track_name);
     ESP_LOGI(TAG, "artist name: %s", track.artist_name);
     ESP_LOGI(TAG, "is playing: %d", track.is_playing);
-    ESP_LOGI(TAG, "has new cover: %d", track.has_new_cover);
+    ESP_LOGI(TAG, "cover state: %d", sp_cover_state_to_str(track.cover_state));
     return ESP_OK;
 }

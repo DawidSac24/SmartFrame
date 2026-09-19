@@ -72,7 +72,7 @@ esp_err_t sp_cmd_clear(void)
     empty_track.artist_name[0] = '\0';
     empty_track.cover_url[0] = '\0';
     empty_track.is_playing = false;
-    empty_track.has_new_cover = false;
+    empty_track.cover_state = SP_COVER_NONE;
 
     esp_err_t set_track_err = sp_state_set_track_info(&empty_track);
     if (set_track_err != ESP_OK)

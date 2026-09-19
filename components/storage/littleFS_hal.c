@@ -1,4 +1,5 @@
-#include "esp_littlefs.h"
+#include "storage.h"
+
 #include "esp_log.h"
 #include "esp_err.h"
 #include <stdio.h>
@@ -82,4 +83,26 @@ esp_err_t storage_read_buffer(const char *filepath, uint8_t **out_data, size_t *
     }
 
     return ESP_OK;
+}
+
+FILE *storage_open_stream(const char *filepath, const char *mode)
+{
+    if (filepath == NULL || mode == NULL)
+        return NULL;
+    return fopen(filepath, mode);
+}
+
+size_t storage_write_stream(FILE *file, const uint8_t *data, size_t size)
+{
+    if (file == NULL || data == NULL || size == 0)
+        return 0;
+    return fwrite(data, 1, size, file);
+}
+
+void storage_close_stream(FILE *file)
+{
+    if (file != NULL)
+    {
+        fclose(file);
+    }
 }

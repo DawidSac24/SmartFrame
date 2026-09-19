@@ -41,3 +41,39 @@ esp_err_t sp_state_set_track_info(const struct spotify_track_dto *track_info)
     }
     return ESP_ERR_TIMEOUT;
 }
+
+const char *sp_api_state_to_str(enum sp_api_state state)
+{
+    switch (state)
+    {
+    case SP_API_WAITING_AUTH:
+        return "WAITING_AUTH";
+    case SP_API_AUTHENTICATING:
+        return "AUTHENTICATING";
+    case SP_API_READY:
+        return "READY";
+    case SP_API_ERROR:
+        return "ERROR";
+    default:
+        return "UNKNOWN_API_STATE";
+    }
+}
+
+const char *sp_cover_state_to_str(enum sp_cover_state_t state)
+{
+    switch (state)
+    {
+    case SP_COVER_NONE:
+        return "NONE";
+    case SP_COVER_DOWNLOADING:
+        return "DOWNLOADING";
+    case SP_COVER_NEW_FILE:
+        return "NEW_FILE";
+    case SP_COVER_DECODED:
+        return "DECODED";
+    case SP_COVER_FAILED:
+        return "FAILED";
+    default:
+        return "UNKNOWN_COVER_STATE";
+    }
+}
