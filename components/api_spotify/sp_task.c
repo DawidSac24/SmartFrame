@@ -1,7 +1,6 @@
 #include "api_spotify.h"
+#include "sp_manager.h"
 #include "sp_auth.h"
-#include "sp_client.h"
-#include "sp_cmd.h"
 
 #include "esp_log.h"
 
@@ -18,9 +17,7 @@ void sp_task(void *pvParameters);
 
 esp_err_t spotify_init(void)
 {
-  sp_auth_init();
-  sp_cmd_register();
-
+  sp_manager_init();
   TaskHandle_t task_handle = NULL;
   BaseType_t returned = xTaskCreatePinnedToCore(sp_task, "spotify_task", 8192, NULL, PRIO_SPOTIFY_API, &task_handle, 0);
   if (returned != pdPASS)
@@ -34,32 +31,16 @@ esp_err_t spotify_init(void)
 
 void sp_task(void *pvParameters)
 {
-  struct sp_track_info track_info;
   while (1)
   {
-    if (sp_auth_ensure_valid() == ESP_OK)
-    {
-      char token[256];
-      sp_auth_get_token(token, sizeof(token));
-
-      esp_err_t res = sp_client_fetch_track(token, &track_info);
-      if (res != ESP_OK)
-      {
-        ESP_LOGE(TAG, "Failed to fetch track info: %s", esp_err_to_name(res));
-      }
-      else
-      {
-        ESP_LOGI(TAG, "Currently playing: '%s' by '%s'", track_info.track_name, track_info.artist_name);
-      }
-    }
-
+    sp_manager_fetch_and_save_track();
     vTaskDelay(POLL_DELAY); // Delay for 3s
   }
 }
 
 esp_err_t spotify_send_auth_code(const char *auth_code)
 {
-  esp_err_t res = sp_auth_send_code(auth_code);
+  esp_err_t res = sp_auth_set_auth_code(auth_code);
 
   if (res == ESP_OK)
     ESP_LOGI(TAG, "Spotify authentification code sent successfully.");

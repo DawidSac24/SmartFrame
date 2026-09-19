@@ -17,3 +17,4 @@ dependencies:
   espressif/cjson: ^1.7.19
   espressif/mdns: '*'
   esphome/esp-hub75: '*'
+  joltwallet/littlefs: '*'

@@ -46,6 +46,6 @@ void app_main(void)
   setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
   tzset();
 
-  api_weather_start_task(LONGITUDE, LATITUDE);
+  // api_weather_start_task(LONGITUDE, LATITUDE);
   spotify_init();
 }

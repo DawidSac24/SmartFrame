@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #define DEFAULT_BUFF_SIZE 256
+#define DEFAULT_AUTH_CODE_BUFF_SIZE 512
 
 struct sp_auth_token_state
 {
@@ -17,12 +18,4 @@ struct sp_token_response
     char refresh_token[DEFAULT_BUFF_SIZE];
     int expires_in_sec;
     bool has_new_refresh_token;
-};
-
-struct sp_track_info
-{
-    char track_name[64];
-    char artist_name[64];
-    char image_url[128];
-    bool is_playing;
 };

@@ -1,25 +1,19 @@
 #include "sp_parse.h"
 
 #include "cJSON.h"
-#include "esp_log.h"
 #include <string.h>
 
-static const char *TAG = "spotify_parser";
-
-esp_err_t sp_parse_track(const char *json_string, struct sp_track_info *out_info)
+esp_err_t sp_parse_track(const char *json, struct spotify_track_dto *out_info)
 {
-    if (json_string == NULL || out_info == NULL)
+    if (json == NULL || out_info == NULL)
         return ESP_ERR_INVALID_ARG;
 
-    // 1. Parse the raw string into a cJSON object
-    cJSON *root = cJSON_Parse(json_string);
+    cJSON *root = cJSON_Parse(json);
     if (root == NULL)
     {
-        ESP_LOGE(TAG, "Failed to parse JSON");
         return ESP_FAIL;
     }
 
-    // 2. Check if music is actually playing
     cJSON *is_playing = cJSON_GetObjectItem(root, "is_playing");
     if (cJSON_IsTrue(is_playing))
     {
@@ -28,31 +22,25 @@ esp_err_t sp_parse_track(const char *json_string, struct sp_track_info *out_info
     else
     {
         out_info->is_playing = false;
-        // If paused, you might still want the track info, so we continue
     }
 
-    // 3. Get the main "item" object (the track itself)
     cJSON *item = cJSON_GetObjectItem(root, "item");
     if (item == NULL || cJSON_IsNull(item))
     {
-        ESP_LOGW(TAG, "No track currently playing (or podcast playing)");
-        cJSON_Delete(root); // ALWAYS delete root before returning!
+        cJSON_Delete(root);
         return ESP_ERR_NOT_FOUND;
     }
 
-    // 4. Extract Track Name
     cJSON *track_name = cJSON_GetObjectItem(item, "name");
     if (cJSON_IsString(track_name) && track_name->valuestring != NULL)
     {
         strncpy(out_info->track_name, track_name->valuestring, sizeof(out_info->track_name) - 1);
         out_info->track_name[sizeof(out_info->track_name) - 1] = '\0';
     }
-
-    // 5. Extract First Artist Name
     cJSON *artists = cJSON_GetObjectItem(item, "artists");
     if (cJSON_IsArray(artists))
     {
-        cJSON *first_artist = cJSON_GetArrayItem(artists, 0); // Get index 0
+        cJSON *first_artist = cJSON_GetArrayItem(artists, 0);
         if (first_artist != NULL)
         {
             cJSON *artist_name = cJSON_GetObjectItem(first_artist, "name");
@@ -64,15 +52,12 @@ esp_err_t sp_parse_track(const char *json_string, struct sp_track_info *out_info
         }
     }
 
-    // 6. Extract the 64x64 Image URL
     cJSON *album = cJSON_GetObjectItem(item, "album");
     if (album != NULL)
     {
         cJSON *images = cJSON_GetObjectItem(album, "images");
         if (cJSON_IsArray(images))
         {
-            // Spotify orders images: [0] Large, [1] Medium, [2] Small (64x64)
-            // Getting the last item in the array ensures we get the smallest available image
             int num_images = cJSON_GetArraySize(images);
             if (num_images > 0)
             {
@@ -80,8 +65,8 @@ esp_err_t sp_parse_track(const char *json_string, struct sp_track_info *out_info
                 cJSON *url = cJSON_GetObjectItem(smallest_image, "url");
                 if (cJSON_IsString(url) && url->valuestring != NULL)
                 {
-                    strncpy(out_info->image_url, url->valuestring, sizeof(out_info->image_url) - 1);
-                    out_info->image_url[sizeof(out_info->image_url) - 1] = '\0';
+                    strncpy(out_info->cover_url, url->valuestring, sizeof(out_info->cover_url) - 1);
+                    out_info->cover_url[sizeof(out_info->cover_url) - 1] = '\0';
                 }
             }
         }
@@ -89,13 +74,14 @@ esp_err_t sp_parse_track(const char *json_string, struct sp_track_info *out_info
 
     cJSON_Delete(root);
 
-    ESP_LOGI(TAG, "Parsed: '%s' by '%s'", out_info->track_name, out_info->artist_name);
     return ESP_OK;
 }
 
-esp_err_t sp_parse_token_response(const char *json,
-                                  struct sp_token_response *out)
+esp_err_t sp_parse_token_response(const char *json, struct sp_token_response *out)
 {
+    if (json == NULL || out == NULL)
+        return ESP_ERR_INVALID_ARG;
+
     cJSON *root = cJSON_Parse(json);
     if (root == NULL)
     {

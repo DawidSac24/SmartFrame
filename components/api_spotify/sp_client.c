@@ -1,9 +1,6 @@
 #include "sp_client.h"
 #include "sp_types.h"
-#include "sp_parse.h"
-
 #include "http_client.h"
-
 #include "esp_log.h"
 #include <string.h>
 
@@ -11,119 +8,103 @@
 
 static const char *TAG = "spotify_client";
 
-esp_err_t spotify_client_request_tokens(const char *body, const char *auth_header,
-                                        struct sp_token_response *out_response);
+esp_err_t sp_client_request_tokens(const char *body, const char *auth_header, char **res);
 
-esp_err_t sp_client_fetch_track(const char *access_token, struct sp_track_info *out)
+esp_err_t sp_client_fetch_track(const char *access_token, char **res)
 {
-    if (access_token == NULL || out == NULL)
+    if (access_token == NULL || res == NULL)
         return ESP_ERR_INVALID_ARG;
 
     char auth_header[512];
     snprintf(auth_header, sizeof(auth_header), "Bearer %s", access_token);
 
     const char *url = "https://api.spotify.com/v1/me/player/currently-playing";
-
-    char *http_response = NULL;
     int status_code = 0;
 
-    esp_err_t http_result = http_client_request(url, HTTP_CLIENT_GET, auth_header,
-                                                "application/json", NULL,
-                                                &http_response, &status_code);
+    esp_err_t req_err = http_client_request(url, HTTP_CLIENT_GET, auth_header,
+                                            "application/json", NULL,
+                                            res, &status_code);
 
-    if (http_result != ESP_OK || status_code != 200)
+    if (req_err != ESP_OK || status_code != 200)
     {
         ESP_LOGE(TAG, "Track request failed! HTTP Status: %d", status_code);
-        if (http_response != NULL)
+        if (*res != NULL)
         {
-            ESP_LOGE(TAG, "Spotify Response: %s", http_response);
-            free(http_response);
+            ESP_LOGE(TAG, "Spotify Response: %s", *res);
+            free(*res);
+            *res = NULL;
         }
-        return (http_result == ESP_OK) ? ESP_ERR_INVALID_RESPONSE : http_result;
+        return (req_err == ESP_OK) ? ESP_ERR_INVALID_RESPONSE : req_err;
     }
 
-    esp_err_t parse_result = sp_parse_track(http_response, out);
-    if (parse_result != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Failed to parse JSON response: %s", esp_err_to_name(parse_result));
-    }
-
-    if (http_response != NULL)
-    {
-        free(http_response);
-    }
-
-    return parse_result;
+    return ESP_OK;
 }
 
-esp_err_t sp_client_exchange_code(const char *auth_code, const char *auth_header,
-                                  struct sp_token_response *out_response)
+esp_err_t sp_client_exchange_code(const char *auth_code, const char *auth_header, char **res)
 {
-    char body[HTTP_REQUEST_BODY_BUFF_SIZE];
+    char body[1024];
     snprintf(body, sizeof(body),
              "grant_type=authorization_code"
              "&code=%s"
              "&redirect_uri=%s",
              auth_code, SPOTIFY_REDIRECT_URI);
 
-    esp_err_t res = spotify_client_request_tokens(body, auth_header, out_response);
-    if (res != ESP_OK)
+    ESP_LOGI(TAG, "Full Auth Body length: %d", strlen(body));
+    ESP_LOGI(TAG, "Full Auth Body: %s", body);
+
+    esp_err_t req_err = sp_client_request_tokens(body, auth_header, res);
+    if (req_err != ESP_OK)
     {
-        ESP_LOGE(TAG, "Failed to exchange authentification code: %s", esp_err_to_name(res));
-        return res;
+        ESP_LOGE(TAG, "Failed to exchange auth code: %s", esp_err_to_name(req_err));
+        return req_err;
     }
 
     ESP_LOGI(TAG, "Successfully exchanged auth code for tokens!");
     return ESP_OK;
 }
 
-esp_err_t sp_client_refresh_token(const char *refresh_token, const char *auth_header,
-                                  struct sp_token_response *out_response)
+esp_err_t sp_client_refresh_token(const char *refresh_token, const char *auth_header, char **res)
 {
     char body[HTTP_REQUEST_BODY_BUFF_SIZE];
+
     snprintf(body, sizeof(body),
              "grant_type=refresh_token"
-             "&code=%s",
+             "&refresh_token=%s",
              refresh_token);
 
-    esp_err_t res = spotify_client_request_tokens(body, auth_header, out_response);
-    if (res != ESP_OK)
+    esp_err_t req_err = sp_client_request_tokens(body, auth_header, res);
+    if (req_err != ESP_OK)
     {
-        ESP_LOGE(TAG, "Failed to refresh access token: %s", esp_err_to_name(res));
-        return res;
+        ESP_LOGE(TAG, "Failed to refresh access token: %s", esp_err_to_name(req_err));
+        return req_err;
     }
 
     ESP_LOGI(TAG, "Successfully refreshed access token!");
     return ESP_OK;
 }
 
-esp_err_t spotify_client_request_tokens(const char *body, const char *auth_header,
-                                        struct sp_token_response *out_response)
+esp_err_t sp_client_request_tokens(const char *body, const char *auth_header, char **res)
 {
     const char *url = "https://accounts.spotify.com/api/token";
+    int status_code = 0;
 
-    char **http_response = (char **)malloc(sizeof(char *));
-    int *status_code = (int *)malloc(sizeof(int));
-    esp_err_t http_result = http_client_request(url, HTTP_CLIENT_GET, auth_header,
-                                                "application/x-www-form-urlencoded",
-                                                body, http_response, status_code);
+    esp_err_t req_err = http_client_request(url, HTTP_CLIENT_POST, auth_header,
+                                            "application/x-www-form-urlencoded",
+                                            body, res, &status_code);
 
-    if (http_result != ESP_OK || *status_code != 200)
+    if (req_err != ESP_OK || status_code != 200)
     {
-        free(http_response);
         ESP_LOGE(TAG, "Token request failed! HTTP Status: %d", status_code);
-        ESP_LOGE(TAG, "Spotify Response: %s", &http_response);
-        if (http_result == ESP_OK)
-            return ESP_ERR_INVALID_RESPONSE;
-        return http_result;
+
+        if (*res != NULL)
+        {
+            ESP_LOGE(TAG, "Spotify Response: %s", *res);
+            free(*res);
+            *res = NULL;
+        }
+
+        return (req_err == ESP_OK) ? ESP_ERR_INVALID_RESPONSE : req_err;
     }
 
-    esp_err_t parse_result = sp_parse_token_response(*http_response, out_response);
-    if (parse_result != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Failed to parse JSON response: %s", esp_err_to_name(parse_result));
-        free(http_response);
-        return parse_result;
-    }
     return ESP_OK;
 }

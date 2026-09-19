@@ -48,7 +48,7 @@ static esp_err_t spotify_callback_handler(httpd_req_t *req)
     if (httpd_req_get_url_query_str(req, query_string, sizeof(query_string)) == ESP_OK)
     {
 
-        char auth_code[350];
+        char auth_code[512];
 
         if (httpd_query_key_value(query_string, "code", auth_code, sizeof(auth_code)) == ESP_OK)
         {
@@ -62,6 +62,7 @@ static esp_err_t spotify_callback_handler(httpd_req_t *req)
                     "<p>Your Smart Frame is now connected to Spotify.</p>"
                     "<p>You can close this window.</p></body>";
 
+                httpd_resp_set_hdr(req, "Connection", "close"); // Force SSL memory cleanup!
                 httpd_resp_send(req, success_html, HTTPD_RESP_USE_STRLEN);
                 return ESP_OK;
             }

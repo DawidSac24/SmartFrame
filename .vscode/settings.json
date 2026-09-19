@@ -19,7 +19,9 @@
       "inheritDefault": "hidden"
     }
   },
-  "idf.openOcdConfigs": ["board/esp32s3-builtin.cfg"],
+  "idf.openOcdConfigs": [
+    "board/esp32s3-builtin.cfg"
+  ],
   "idf.portWin": "COM8",
   "idf.currentSetup": "/home/dawid/.espressif/v6.1/esp-idf",
   "idf.customExtraVars": {
