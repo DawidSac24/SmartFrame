@@ -15,7 +15,13 @@ esp_err_t storage_init()
         return nvs_res;
     }
 
-    // TODO: initialie LittleFS
+    esp_err_t fs_res = fs_hal_init();
+
+    if (fs_res != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to initialise littleFS: %s", esp_err_to_name(fs_res));
+        return fs_res;
+    }
 
     return ESP_OK;
 }
@@ -52,4 +58,13 @@ esp_err_t storage_set_str(const char *key, const char *val)
             return ESP_ERR_INVALID_ARG;
         return nvs_hal_set_str(key, val);
     }
+}
+
+esp_err_t storage_read_buff(const char *filepath, uint8_t **out_data, size_t *out_size)
+{
+    return fs_hal_read_buff(filepath, out_data, out_size);
+}
+esp_err_t storage_write_buff(const char *filepath, const uint8_t *data, size_t size)
+{
+    return fs_hal_write_buff(filepath, data, size);
 }
