@@ -1,5 +1,5 @@
 #include "api_weather.h"
-#include "weather_priv.h"
+#include "wea_priv.h"
 
 #include "app_state.h"
 #include "esp_console.h"
@@ -10,11 +10,15 @@
 
 static const char *TAG = "weather_cmd";
 
-static esp_err_t cmd_weather(int argc, char **argv);
-esp_err_t weather_cmd_fetch(int argc, char **argv);
-esp_err_t weather_cmd_print(int argc, char **argv);
+static const char *wea_cmd_strings[] = {
+    "fetch",
+    "print"};
 
-void weather_cmd_register(void)
+static esp_err_t cmd_weather(int argc, char **argv);
+esp_err_t wea_cmd_fetch(void);
+esp_err_t wea_cmd_print(void);
+
+void wea_cmd_register(void)
 {
     esp_console_cmd_t cmd = {
         .command = "weather",
@@ -24,10 +28,10 @@ void weather_cmd_register(void)
     };
     esp_console_cmd_register(&cmd);
 
-    weather_cmd_queue = xQueueCreate(WEATHER_CMD_MAX, sizeof(enum weather_cmd));
+    weather_cmd_queue = xQueueCreate(WEA_CMD_UNKNOWN, sizeof(enum wea_cmd));
 }
 
-void weather_cmd_send(enum weather_cmd cmd)
+void wea_cmd_send(enum wea_cmd cmd)
 {
     if (weather_cmd_queue != NULL)
     {
@@ -35,47 +39,61 @@ void weather_cmd_send(enum weather_cmd cmd)
     }
 }
 
-void weather_cmd_dispatch(enum weather_cmd cmd)
+esp_err_t wea_cmd_dispatch(enum wea_cmd cmd)
 {
     switch (cmd)
     {
-    case WEATHER_CMD_FETCH:
-        weather_cmd_fetch(0, NULL);
-        break;
-    case WEATHER_CMD_PRINT:
-        weather_cmd_print(0, NULL);
-        break;
+    case WEA_CMD_FETCH:
+        return wea_cmd_fetch();
+    case WEA_CMD_PRINT:
+        return wea_cmd_print();
     default:
         ESP_LOGE(TAG, "Unknown command received: %d", cmd);
-        break;
+        return ESP_ERR_INVALID_ARG;
     }
+    return ESP_FAIL;
 }
 
 esp_err_t cmd_weather(int argc, char **argv)
 {
     if (argc < 2)
     {
-        ESP_LOGE(TAG, "No argument provided. Use 'print' or 'fetch'.");
+        ESP_LOGE(TAG, "No argument provided. Use:");
+        for (int i = 0; i < WEA_CMD_UNKNOWN; i++)
+        {
+            ESP_LOGE(TAG, "weather %s", wea_cmd_strings[i]);
+        }
         return ESP_ERR_INVALID_ARG;
     }
 
-    if (strcmp(argv[1], "print") == 0)
+    enum wea_cmd cmd = wea_str_to_cmd(argv[1]);
+
+    if (cmd == WEA_CMD_UNKNOWN)
     {
-        weather_cmd_send(WEATHER_CMD_PRINT);
-    }
-    else if (strcmp(argv[1], "fetch") == 0)
-    {
-        weather_cmd_send(WEATHER_CMD_FETCH);
-    }
-    else
-    {
-        printf("Error: Unknown argument '%s'\n", argv[1]);
+        ESP_LOGE(TAG, "Unknown argument '%s'", argv[1]);
+        return ESP_ERR_INVALID_ARG;
     }
 
+    wea_cmd_send(cmd);
+
+    ESP_LOGI(TAG, "Command '%s' dispatched to task.", argv[1]);
     return ESP_OK;
 }
 
-esp_err_t weather_cmd_fetch(int argc, char **argv)
+enum wea_cmd wea_str_to_cmd(const char *str)
+{
+    int num_cmds = sizeof(wea_cmd_strings) / sizeof(wea_cmd_strings[0]);
+    for (int i = 0; i < num_cmds; i++)
+    {
+        if (strcmp(str, wea_cmd_strings[i]) == 0)
+        {
+            return (enum wea_cmd)i;
+        }
+    }
+    return WEA_CMD_UNKNOWN;
+}
+
+esp_err_t wea_cmd_fetch()
 {
     ESP_LOGI(TAG, "Forcing a manual weather fetch...");
 
@@ -83,7 +101,7 @@ esp_err_t weather_cmd_fetch(int argc, char **argv)
     loc.latitude = LATITUDE;
     loc.longitude = LONGITUDE;
 
-    esp_err_t err = api_weather_fetch(&loc);
+    esp_err_t err = wea_fetch(&loc);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Error fetching weather data: %s", esp_err_to_name(err));
@@ -91,7 +109,7 @@ esp_err_t weather_cmd_fetch(int argc, char **argv)
     return err;
 }
 
-esp_err_t weather_cmd_print(int argc, char **argv)
+esp_err_t wea_cmd_print()
 {
     if (xSemaphoreTake(global_state_mutex, pdMS_TO_TICKS(100)))
     {

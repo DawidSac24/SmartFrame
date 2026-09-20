@@ -1,4 +1,4 @@
-#include "weather_priv.h"
+#include "wea_priv.h"
 
 #include "app_state.h"
 
@@ -7,7 +7,7 @@
 
 static const char *TAG = "weather_api";
 
-esp_err_t api_weather_parse(const char *json_str)
+esp_err_t wea_parse(const char *json_str)
 {
     if (json_str == NULL)
         return ESP_ERR_INVALID_ARG;

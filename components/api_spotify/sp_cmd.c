@@ -31,6 +31,8 @@ void sp_cmd_register(void)
         .func = &cmd_spotify,
     };
     esp_console_cmd_register(&cmd);
+
+    sp_cmd_queue = xQueueCreate(SP_CMD_UNKNOWN, sizeof(enum sp_cmd));
 }
 
 void sp_cmd_send(enum sp_cmd cmd)

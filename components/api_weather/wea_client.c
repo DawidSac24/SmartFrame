@@ -1,4 +1,4 @@
-#include "weather_priv.h"
+#include "wea_priv.h"
 
 #include "secrets.h"
 
@@ -9,7 +9,7 @@
 
 static const char *TAG = "weather_api";
 
-esp_err_t api_weather_fetch(struct localisation *localisation)
+esp_err_t wea_fetch(struct localisation *localisation)
 {
     char url_buffer[200];
 
@@ -65,7 +65,7 @@ esp_err_t api_weather_fetch(struct localisation *localisation)
 
     json_buffer[total_read_len] = '\0';
 
-json_buffer[total_read_len] = '\0';
+    json_buffer[total_read_len] = '\0';
 
     // Check if the API actually gave us a 200 OK
     int status_code = esp_http_client_get_status_code(client);
@@ -78,11 +78,14 @@ json_buffer[total_read_len] = '\0';
     else
     {
         ESP_LOGI(TAG, "Successfully downloaded %d bytes.", total_read_len);
-        err = api_weather_parse(json_buffer);
-        
-        if (err != ESP_OK) {
+        err = wea_parse(json_buffer);
+
+        if (err != ESP_OK)
+        {
             ESP_LOGE(TAG, "Failed to parse weather data: %s", esp_err_to_name(err));
-        } else {
+        }
+        else
+        {
             ESP_LOGI(TAG, "Weather data fetched and parsed successfully.");
         }
     }
@@ -94,7 +97,7 @@ json_buffer[total_read_len] = '\0';
     ESP_LOGD(TAG, "Successfully downloaded %d bytes.", total_read_len);
     ESP_LOGD(TAG, "JSON Response: %s", json_buffer);
 
-    err = api_weather_parse(json_buffer);
+    err = wea_parse(json_buffer);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to parse weather data: %s", esp_err_to_name(err));
