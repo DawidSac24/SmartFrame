@@ -31,7 +31,7 @@ esp_err_t fs_hal_init(void)
     return ESP_OK;
 }
 
-esp_err_t storage_write_buffer(const char *filepath, const uint8_t *data, size_t size)
+esp_err_t storage_write_buff(const char *filepath, const uint8_t *data, size_t size)
 {
     if (filepath == NULL || data == NULL || size == 0)
         return ESP_ERR_INVALID_ARG;
@@ -48,7 +48,7 @@ esp_err_t storage_write_buffer(const char *filepath, const uint8_t *data, size_t
     return (written == size) ? ESP_OK : ESP_FAIL;
 }
 
-esp_err_t storage_read_buffer(const char *filepath, uint8_t **out_data, size_t *out_size)
+esp_err_t storage_read_buff(const char *filepath, uint8_t **out_data, size_t *out_size)
 {
     if (filepath == NULL || out_data == NULL || out_size == NULL)
         return ESP_ERR_INVALID_ARG;

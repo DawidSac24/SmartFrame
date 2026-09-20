@@ -18,3 +18,4 @@ dependencies:
   espressif/mdns: '*'
   esphome/esp-hub75: '*'
   joltwallet/littlefs: '*'
+  espressif/esp_jpeg: '*'

@@ -51,6 +51,9 @@ esp_err_t hub75_hal_init(void)
         ESP_LOGE(TAG, "Failed to initialize HUB75 Driver.");
         return ESP_FAIL;
     }
+
+    dma_display->set_rotation(Hub75Rotation::ROTATE_180);
+    dma_display->set_brightness(100);
 }
 
 void hub75_hal_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
@@ -60,6 +63,17 @@ void hub75_hal_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
         dma_display->set_pixel(x, y, r, g, b);
     }
 }
+void hub75_hal_draw_pixels(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buffer)
+{
+    if (dma_display != nullptr && buffer != NULL)
+    {
+        dma_display->draw_pixels(x, y, w, h, buffer,
+                                 Hub75PixelFormat::RGB888,
+                                 Hub75ColorOrder::RGB,
+                                 false); // Not big-endian
+    }
+}
+void hub75_hal_fill(int16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t r, uint8_t g, uint8_t b);
 
 void hub75_hal_clear(void)
 {
