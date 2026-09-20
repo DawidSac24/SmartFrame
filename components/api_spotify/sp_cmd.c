@@ -11,34 +11,16 @@
 
 static const char *TAG = "spotify_cmd";
 
+static const char *sp_cmd_strings[] = {
+    "fetch",
+    "print",
+    "clear"};
+
+static esp_err_t
+cmd_spotify(int argc, char **argv);
 esp_err_t sp_cmd_fetch_track(void);
-
 esp_err_t sp_cmd_print(void);
-
 esp_err_t sp_cmd_clear(void);
-
-static esp_err_t cmd_spotify(int argc, char **argv)
-{
-    if (argc < 2)
-    {
-        ESP_LOGE(TAG, "No argument provided. Use 'print' or 'fetch'.");
-        return ESP_ERR_INVALID_ARG;
-    }
-
-    if (strcmp(argv[1], "print") == 0)
-        return sp_cmd_print();
-
-    else if (strcmp(argv[1], "fetch") == 0)
-        return sp_cmd_fetch_track();
-
-    else if (strcmp(argv[1], "clear") == 0)
-        return sp_cmd_clear();
-
-    else
-        printf("Error: Unknown argument '%s'\n", argv[1]);
-
-    return ESP_OK;
-}
 
 void sp_cmd_register(void)
 {
@@ -51,15 +33,73 @@ void sp_cmd_register(void)
     esp_console_cmd_register(&cmd);
 }
 
+void sp_cmd_send(enum sp_cmd cmd)
+{
+    if (sp_cmd_queue != NULL)
+    {
+        xQueueSend(sp_cmd_queue, &cmd, 0);
+    }
+}
+
+esp_err_t sp_cmd_dispatch(enum sp_cmd cmd)
+{
+    switch (cmd)
+    {
+    case SP_CMD_FETCH_TRACK:
+        return sp_cmd_fetch_track();
+    case SP_CMD_PRINT:
+        return sp_cmd_print();
+    case SP_CMD_CLEAR:
+        return sp_cmd_clear();
+    default:
+        ESP_LOGE(TAG, "Unkown command received: %d", cmd);
+        return ESP_ERR_INVALID_ARG;
+    }
+    return ESP_FAIL;
+}
+
+esp_err_t cmd_spotify(int argc, char **argv)
+{
+    if (argc < 2)
+    {
+        ESP_LOGE(TAG, "No argument provided. Use:");
+        for (int i = 0; i < SP_CMD_UNKNOWN; i++)
+        {
+            ESP_LOGE(TAG, "spotify %s", sp_cmd_strings[i]);
+        }
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    enum sp_cmd cmd = sp_str_to_cmd(argv[1]);
+
+    if (cmd == SP_CMD_UNKNOWN)
+    {
+        ESP_LOGE(TAG, "Unknown argument '%s'", argv[1]);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    sp_cmd_send(cmd);
+
+    ESP_LOGI(TAG, "Command '%s' dispatched to task.", argv[1]);
+    return ESP_OK;
+}
+
+enum sp_cmd sp_str_to_cmd(const char *str)
+{
+    int num_cmds = sizeof(sp_cmd_strings) / sizeof(sp_cmd_strings[0]);
+    for (int i = 0; i < num_cmds; i++)
+    {
+        if (strcmp(str, sp_cmd_strings[i]) == 0)
+        {
+            return (enum sp_cmd)i;
+        }
+    }
+    return SP_CMD_UNKNOWN;
+}
+
 esp_err_t sp_cmd_fetch_track(void)
 {
-    // if (sp_auth_is_valid() != ESP_OK)
-    // {
-    //     ESP_LOGE(TAG, "Spotify authentication is not valid.");
-    //     return ESP_ERR_INVALID_STATE;
-    // }
-
-    return ESP_ERR_NOT_SUPPORTED;
+    return sp_manager_fetch_and_save_track();
 }
 
 esp_err_t sp_cmd_clear(void)

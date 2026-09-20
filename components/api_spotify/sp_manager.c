@@ -6,7 +6,6 @@
 #include "sp_client.h"
 #include "sp_parse.h"
 #include "sp_storage.h"
-#include "sp_cmd.h"
 
 #include "http_client.h"
 #include "gfx.h"
@@ -20,7 +19,6 @@ static uint8_t g_album_rgb_buffer[64 * 64 * 3];
 void sp_manager_init(void)
 {
     sp_auth_init();
-    sp_cmd_register();
     sp_state_init();
 }
 
