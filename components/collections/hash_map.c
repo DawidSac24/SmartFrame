@@ -39,13 +39,11 @@ hash_map_t hm_init(struct allocator *allocator, size_t capacity)
 											sizeof(struct hash_map));
 	if (self == NULL)
 	{
-		ESP_LOGE("Failed to allocate the hash map");
 		return NULL;
 	}
 
 	if (capacity < MIN_CAPACITY)
 	{
-		ESP_LOGW("The hash map capacity must be higher then %d", MIN_CAPACITY);
 		self->capacity = MIN_CAPACITY;
 	}
 	else
@@ -59,7 +57,6 @@ hash_map_t hm_init(struct allocator *allocator, size_t capacity)
 												  sizeof(struct hm_entry));
 	if (self->entries == NULL)
 	{
-		ESP_LOGE("Failed to allocate the hash map data");
 		mem_free(allocator, self);
 		return NULL;
 	}
@@ -102,7 +99,6 @@ const char *hm_set(hash_map_t self, const char *key, void *value)
 {
 	if (value == NULL)
 	{
-		ESP_LOGW("HASH_MAP", "Value for hash_map_set cannot be null");
 		return NULL;
 	}
 
@@ -118,8 +114,6 @@ const char *hm_set(hash_map_t self, const char *key, void *value)
 	const char *res = hm_set_entry(self->allocator, self->entries,
 								   self->capacity, key, value,
 								   &self->length, &self->tombstone_count);
-	if (res == NULL)
-		ESP_LOGE("HASH_MAP", "Failed to set value for key in the hash map");
 
 	return res;
 }

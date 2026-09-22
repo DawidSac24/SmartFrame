@@ -12,23 +12,23 @@ struct list_node
     struct list_node *prev;
 };
 
-struct list
+struct intr_list
 {
     struct list_node head;
 };
 
-static inline void list_init(struct list *list)
+static inline void list_init(struct intr_list *list)
 {
     list->head.next = &list->head;
     list->head.prev = &list->head;
 }
 
-static inline bool list_is_empty(const struct list *list)
+static inline bool list_is_empty(const struct intr_list *list)
 {
     return list->head.next == &list->head;
 }
 
-static inline void list_push_back(struct list *list, struct list_node *node)
+static inline void list_push_back(struct intr_list *list, struct list_node *node)
 {
     node->prev = list->head.prev;
     node->next = &list->head;

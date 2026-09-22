@@ -1,0 +1,14 @@
+- [] make the clock screen
+    - [] add fonts to the gfx library
+- [] remove completely app_state
+    - [] add weather_state
+- []  rename for better names the task init's and add priority and memory as their parameters
+- [] make the weather screen
+- [] make the screens singletons
+- [] optimise memory allocation with allocators
+    - [] refactor http_client
+    - [] refactor parsers
+        - [] maybe add a helper component
+    - [] refactor the tasks
+- [] add data structures
+- [] maybe make the gfx a singleton or have a handle struct?

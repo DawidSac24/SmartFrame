@@ -3,28 +3,426 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Frame</title>
+    <title>Smart Frame Controller</title>
     <style>
-        body { font-family: sans-serif; background: #121212; color: #ffffff; text-align: center; padding: 50px; }
-        button { background: #0070f3; color: white; border: none; padding: 15px 30px; font-size: 18px; border-radius: 8px; cursor: pointer; }
-        button:active { background: #005bb5; }
+        :root {
+            /* Base Light Theme */
+            --bg-color: #f4f4f5;
+            --card-bg: #ffffff;
+            --text-color: #18181b;
+            --text-muted: #71717a;
+            --border-color: #e4e4e7;
+            
+            /* Accent Colors (Default Orange) */
+            --accent-color: #f97316;
+            --accent-hover: #ea580c;
+            --danger-color: #ef4444;
+            --success-color: #22c55e;
+        }
+
+        body.dark-theme {
+            --bg-color: #09090b;
+            --card-bg: #18181b;
+            --text-color: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --border-color: #27272a;
+        }
+
+        body.accent-blue {
+            --accent-color: #3b82f6;
+            --accent-hover: #2563eb;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            line-height: 1.5;
+            transition: background-color 0.3s, color 0.3s;
+            padding: 1rem;
+            padding-bottom: 6rem; /* Extra padding so the FAB doesn't hide content */
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        h1 { font-size: 1.5rem; }
+
+        .theme-controls button {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            margin-left: 0.5rem;
+            transition: 0.2s;
+        }
+
+        .theme-controls button:hover { border-color: var(--accent-color); }
+
+        details {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 0.75rem;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        summary {
+            font-weight: 600;
+            padding: 1rem;
+            cursor: pointer;
+            list-style: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        summary::-webkit-details-marker { display: none; }
+        summary::after { content: '▼'; font-size: 0.8rem; transition: transform 0.2s; }
+        details[open] summary::after { transform: rotate(180deg); }
+
+        .content {
+            padding: 0 1rem 1rem 1rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .list-item:last-child { border-bottom: none; }
+
+        .item-info h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+        .item-info p { font-size: 0.875rem; color: var(--text-muted); }
+
+        .controls button {
+            background: transparent;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            margin-left: 0.25rem;
+        }
+
+        .controls button.primary {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+        }
+
+        .controls button.danger { color: var(--danger-color); border-color: var(--danger-color); }
+
+        /* Visualization Mockup */
+        .visualization-box {
+            width: 100%;
+            max-width: 200px;
+            aspect-ratio: 1/1;
+            background: #000;
+            margin: 1rem auto;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            border: 2px solid #333;
+        }
+
+        .grid-overlay {
+            position: absolute;
+            inset: 0;
+            background-image: 
+                linear-gradient(to right, #111 1px, transparent 1px),
+                linear-gradient(to bottom, #111 1px, transparent 1px);
+            background-size: 3.125% 3.125%;
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .mock-content { color: var(--accent-color); font-weight: bold; z-index: 1; text-align: center; }
+
+        /* Floating Action Button (Save) */
+        .fab-save {
+            position: fixed;
+            bottom: 2rem;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 1rem 3rem;
+            border-radius: 9999px; /* Pill shape */
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            transition: transform 0.2s, background-color 0.2s;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .fab-save:hover {
+            transform: translate(-50%, -3px);
+            background-color: var(--accent-hover);
+        }
+
+        .fab-save:active {
+            transform: translate(-50%, 0);
+        }
+
     </style>
 </head>
-<body>
-    <h1>Smart Frame Control</h1>
-    <p id="status">Status: Waiting...</p>
-    <button onclick="testClick()">Click Me</button>
-    <a href="/login">Connect to Spotify</a>
+<body class="dark-theme accent-orange">
 
-    <script>
-        function testClick() {
-            document.getElementById("status").innerText = "Status: Button Clicked!";
-            console.log("JavaScript is working perfectly.");
+<div class="container">
+    <header>
+        <h1>Smart Frame</h1>
+        <div class="theme-controls">
+            <button onclick="toggleTheme()">Mode</button>
+            <button onclick="toggleAccent()">Accent</button>
+        </div>
+    </header>
+
+    <main>
+        <!-- Active Screens (Scheduler List) -->
+        <details open>
+            <summary>Active Screens</summary>
+            <div class="content" id="active-list">
+                <!-- Populated by JS -->
+            </div>
+        </details>
+
+        <!-- Screen Library -->
+        <details>
+            <summary>Screen Library</summary>
+            <div class="content" id="library-list">
+                <!-- Populated by JS -->
+            </div>
+        </details>
+
+        <!-- Settings & API Config -->
+        <details>
+            <summary>Settings</summary>
+            <div class="content">
+                <div class="list-item">
+                    <div class="item-info">
+                        <h3>Spotify Connection</h3>
+                        <p id="sp-status" style="color: var(--danger-color);">Not Authenticated</p>
+                    </div>
+                    <div class="controls">
+                        <button class="primary" onclick="handleSpotifyAuth()">Connect</button>
+                    </div>
+                </div>
+            </div>
+        </details>
+    </main>
+</div>
+
+<!-- Floating Save Button -->
+<button class="fab-save" onclick="syncToDevice()">
+    Save
+</button>
+
+<script>
+// State Management (Simulating the ESP32 Backend)
+    let activeScreens = [
+        { id: 'spotify', name: 'Spotify Player', desc: 'Shows current track and album art' },
+        { id: 'weather', name: 'Local Weather', desc: 'Current temperature and forecast' }
+    ];
+
+    let libraryScreens = [
+        { id: 'clock', name: 'Digital Clock', desc: 'Simple time and date' },
+        { id: 'custom', name: 'Custom Image', desc: 'Upload a static image', imageData: null }
+    ];
+
+    const activeListEl = document.getElementById('active-list');
+    const libraryListEl = document.getElementById('library-list');
+
+    function renderLists() {
+        activeListEl.innerHTML = '';
+        activeScreens.forEach((screen, index) => {
+            
+            // Check if this is the custom image screen
+            let isCustom = screen.id === 'custom';
+            let previewContent = '';
+            
+            if (isCustom) {
+                let bgStyle = screen.imageData ? `background-image: url(${screen.imageData}); background-size: cover;` : '';
+                previewContent = `
+                    <div class="visualization-box" style="cursor: pointer; ${bgStyle}" onclick="document.getElementById('file-${index}').click()">
+                        <div class="grid-overlay"></div>
+                        <input type="file" id="file-${index}" hidden accept="image/*" onchange="handleImageUpload(event, ${index})">
+                        ${!screen.imageData ? `<div class="mock-content" style="color: white; font-weight: normal;">Click to<br>Upload</div>` : ''}
+                    </div>
+                `;
+            } else {
+                previewContent = `
+                    <div class="visualization-box">
+                        <div class="grid-overlay"></div>
+                        <div class="mock-content">${screen.name}<br><small>64x64</small></div>
+                    </div>
+                `;
+            }
+
+            activeListEl.innerHTML += `
+                <div class="list-item" style="flex-direction: column; align-items: stretch;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <div class="item-info">
+                            <h3>${screen.name}</h3>
+                            <p>${screen.desc}</p>
+                        </div>
+                        <div class="controls">
+                            <button onclick="moveUp(${index})" ${index === 0 ? 'disabled' : ''}>↑</button>
+                            <button onclick="moveDown(${index})" ${index === activeScreens.length - 1 ? 'disabled' : ''}>↓</button>
+                            <button class="danger" onclick="removeScreen(${index})">✕</button>
+                        </div>
+                    </div>
+                    ${previewContent}
+                </div>
+            `;
+        });
+
+        if(activeScreens.length === 0) {
+            activeListEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem 0;">No active screens.</p>';
         }
 
-        function spotifyClick() {
-            window.location.href = "/spotify";
+        libraryListEl.innerHTML = '';
+        libraryScreens.forEach((screen, index) => {
+            libraryListEl.innerHTML += `
+                <div class="list-item">
+                    <div class="item-info">
+                        <h3>${screen.name}</h3>
+                        <p>${screen.desc}</p>
+                    </div>
+                    <div class="controls">
+                        <button class="primary" onclick="addScreen(${index})">+ Add</button>
+                    </div>
+                </div>
+            `;
+        });
+    }
+
+    // Canvas Resizing Logic (Client-Side)
+    function handleImageUpload(event, index) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                // Create a 64x64 canvas
+                const canvas = document.createElement('canvas');
+                canvas.width = 64;
+                canvas.height = 64;
+                const ctx = canvas.getContext('2d');
+
+                // Crop and center the image to a square before resizing
+                const size = Math.min(img.width, img.height);
+                const startX = (img.width - size) / 2;
+                const startY = (img.height - size) / 2;
+                
+                // Draw resized image to canvas
+                ctx.drawImage(img, startX, startY, size, size, 0, 0, 64, 64);
+                
+                // Export as JPEG (Quality 0.9) and save to state
+                activeScreens[index].imageData = canvas.toDataURL('image/jpeg', 0.9);
+                renderLists();
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function addScreen(libraryIndex) {
+        const screen = libraryScreens.splice(libraryIndex, 1)[0];
+        activeScreens.push(screen);
+        renderLists();
+    }
+
+    function removeScreen(activeIndex) {
+        const screen = activeScreens.splice(activeIndex, 1)[0];
+        // Reset image data when returning to library
+        if(screen.id === 'custom') screen.imageData = null; 
+        libraryScreens.push(screen);
+        renderLists();
+    }
+
+    function moveUp(index) {
+        if (index > 0) {
+            [activeScreens[index - 1], activeScreens[index]] = [activeScreens[index], activeScreens[index - 1]];
+            renderLists();
         }
-    </script>
+    }
+
+    function moveDown(index) {
+        if (index < activeScreens.length - 1) {
+            [activeScreens[index + 1], activeScreens[index]] = [activeScreens[index], activeScreens[index + 1]];
+            renderLists();
+        }
+    }
+
+    function toggleTheme() { document.body.classList.toggle('dark-theme'); }
+    function toggleAccent() {
+        document.body.classList.toggle('accent-blue');
+        document.body.classList.toggle('accent-orange');
+    }
+
+    function handleSpotifyAuth() {
+        document.getElementById('sp-status').textContent = 'Authenticated';
+        document.getElementById('sp-status').style.color = 'var(--success-color)';
+    }
+
+    function syncToDevice() {
+        // Collect screen order
+        const payload = activeScreens.map(s => s.id);
+        
+        // Find custom image data if it exists
+        const customScreen = activeScreens.find(s => s.id === 'custom');
+        const customImageBase64 = customScreen ? customScreen.imageData : null;
+
+        console.log("Order payload to ESP32:", payload);
+        if (customImageBase64) {
+            console.log("Custom image ready to POST as binary blob.");
+        }
+        
+        const btn = document.querySelector('.fab-save');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = 'Saved!';
+        btn.style.backgroundColor = 'var(--success-color)';
+        
+        setTimeout(() => {
+            btn.innerHTML = originalText;
+            btn.style.backgroundColor = 'var(--accent-color)';
+        }, 2000);
+    }
+
+    renderLists();
+</script>
+
 </body>
 </html>

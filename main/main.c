@@ -11,6 +11,7 @@
 #include "esp_log.h"
 #include "esp_sntp.h"
 
+#include "ui_task.h"
 #include "wifi.h"
 #include "storage.h"
 #include "web_server.h"
@@ -18,7 +19,6 @@
 #include "api_weather.h"
 #include "cli.h"
 #include "secrets.h"
-#include "hub75_hal.h"
 #include "api_spotify.h"
 
 void app_main(void)
@@ -26,7 +26,7 @@ void app_main(void)
   esp_err_t ret = storage_init();
   ESP_ERROR_CHECK(ret);
 
-  hub75_hal_init();
+  ui_task_init();
 
   app_state_init();
   cli_init();

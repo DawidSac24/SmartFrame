@@ -39,11 +39,12 @@ esp_err_t hub75_hal_init(void)
     // 4. Boot the DMA Engine
     if (dma_display->begin())
     {
-        dma_display->set_brightness(90); // 0-255
+        dma_display->set_brightness(70); // 0-255
         dma_display->clear();
         dma_display->flip_buffer(); // Push the clear to the screen
 
         ESP_LOGI(TAG, "HUB75 DMA Matrix initialized successfully!");
+
         return ESP_OK;
     }
     else
@@ -51,9 +52,6 @@ esp_err_t hub75_hal_init(void)
         ESP_LOGE(TAG, "Failed to initialize HUB75 Driver.");
         return ESP_FAIL;
     }
-
-    dma_display->set_rotation(Hub75Rotation::ROTATE_180);
-    dma_display->set_brightness(100);
 }
 
 void hub75_hal_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)

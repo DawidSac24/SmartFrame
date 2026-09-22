@@ -72,16 +72,6 @@ esp_err_t sp_manager_fetch_and_save_track(void)
         {
             ESP_LOGI(TAG, "Album art saved to flash!");
             new_track.cover_state = SP_COVER_NEW_FILE;
-
-            if (gfx_decode_jpeg("/fs/album.jpg", g_album_rgb_buffer, sizeof(g_album_rgb_buffer)) == ESP_OK)
-            {
-                new_track.cover_state = SP_COVER_DECODED;
-                gfx_draw_screen(g_album_rgb_buffer);
-            }
-            else
-            {
-                new_track.cover_state = SP_COVER_FAILED;
-            }
         }
         else
         {

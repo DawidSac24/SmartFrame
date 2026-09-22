@@ -8,10 +8,28 @@
 
 static const char *TAG = "gfx";
 
+esp_err_t gfx_init(void)
+{
+    return hub75_hal_init();
+}
+
+void gfx_update(void)
+{
+    hub75_hal_update();
+}
+
+void gfx_clear(void)
+{
+    hub75_hal_clear();
+}
+
+void gfx_draw_pixels(uint16_t x, uint16_t y, uint16_t with, uint16_t height, const uint8_t *buffer)
+{
+    hub75_hal_draw_pixels(x, y, with, height, buffer);
+}
 void gfx_draw_screen(const uint8_t *buffer)
 {
     hub75_hal_draw_pixels(0, 0, 64, 64, buffer);
-    hub75_hal_update();
 }
 
 esp_err_t gfx_decode_jpeg(const char *filepath, uint8_t *out_rgb_buffer, size_t buffer_size)
