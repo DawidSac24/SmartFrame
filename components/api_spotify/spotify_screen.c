@@ -78,45 +78,45 @@ static void sp_draw(struct screen *self, float dt_ms)
         return;
     }
 
-    // 3. The One-Time Decode
-    if (track.cover_state == SP_COVER_NEW_FILE && sp_scr->rgb_buffer != NULL)
-    {
-        if (gfx_decode_jpeg("/fs/album.jpg", sp_scr->rgb_buffer, RGB_BUFFER_SIZE) == ESP_OK)
-        {
-            track.cover_state = SP_COVER_DECODED;
-        }
-        else
-        {
-            track.cover_state = SP_COVER_FAILED;
-        }
+    // // 3. The One-Time Decode
+    // if (track.cover_state == SP_COVER_NEW_FILE && sp_scr->rgb_buffer != NULL)
+    // {
+    //     if (gfx_decode_jpeg("/fs/album.jpg", sp_scr->rgb_buffer, RGB_BUFFER_SIZE) == ESP_OK)
+    //     {
+    //         track.cover_state = SP_COVER_DECODED;
+    //     }
+    //     else
+    //     {
+    //         track.cover_state = SP_COVER_FAILED;
+    //     }
 
-        // Push the decoded/failed state back to prevent infinite decoding loops
-        sp_state_set_track_info(&track);
-    }
+    //     // Push the decoded/failed state back to prevent infinite decoding loops
+    //     sp_state_set_track_info(&track);
+    // }
 
-    if (sp_scr->theme == SP_THEME_DEFAULT)
-    {
-        if (gfx_decode_jpeg("/fs/album.jpg", sp_scr->rgb_buffer, sizeof(sp->scr)) == ESP_OK)
-        {
-            new_track.cover_state = SP_COVER_DECODED;
-            gfx_draw_screen(g_album_rgb_buffer);
-        }
-        else
-        {
-            new_track.cover_state = SP_COVER_FAILED;
-        }
+    // if (sp_scr->theme == SP_THEME_DEFAULT)
+    // {
+    //     if (gfx_decode_jpeg("/fs/album.jpg", sp_scr->rgb_buffer, sizeof(sp->scr)) == ESP_OK)
+    //     {
+    //         new_track.cover_state = SP_COVER_DECODED;
+    //         gfx_draw_screen(g_album_rgb_buffer);
+    //     }
+    //     else
+    //     {
+    //         new_track.cover_state = SP_COVER_FAILED;
+    //     }
 
-        gfx_draw_pixels(0, 0, 64, 64, sp_scr->rgb_buffer);
-    }
-    else if (sp_scr->theme == SP_THEME_DISK)
-    {
-        // Tomorrow: We will draw this using a circular mask
-    }
-    else if (sp_scr->theme == SP_THEME_SPINNING_DISK)
-    {
-        // Day 3: We will implement nearest-neighbor rotation math here
-        // sp_scr->rotation_angle += speed * dt_ms;
-    }
+    //     gfx_draw_pixels(0, 0, 64, 64, sp_scr->rgb_buffer);
+    // }
+    // else if (sp_scr->theme == SP_THEME_DISK)
+    // {
+    //     // Tomorrow: We will draw this using a circular mask
+    // }
+    // else if (sp_scr->theme == SP_THEME_SPINNING_DISK)
+    // {
+    //     // Day 3: We will implement nearest-neighbor rotation math here
+    //     // sp_scr->rotation_angle += speed * dt_ms;
+    // }
 }
 
 static void sp_destroy(struct screen *self)

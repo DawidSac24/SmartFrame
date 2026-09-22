@@ -25,6 +25,12 @@ esp_err_t sp_client_fetch_track(const char *access_token, char **res)
                                             "application/json", NULL,
                                             res, &status_code);
 
+    if (status_code == 204)
+    {
+        ESP_LOGD(TAG, "track fetching working but no track currently playing");
+        return ESP_ERR_NOT_FOUND;
+    }
+
     if (req_err != ESP_OK || status_code != 200)
     {
         ESP_LOGE(TAG, "Track request failed! HTTP Status: %d", status_code);

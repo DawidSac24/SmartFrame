@@ -21,7 +21,6 @@ void sp_manager_init(void)
     sp_auth_init();
     sp_state_init();
 }
-
 esp_err_t sp_manager_fetch_and_save_track(void)
 {
     esp_err_t auth_err = sp_manager_ensure_authentificated();
@@ -39,22 +38,38 @@ esp_err_t sp_manager_fetch_and_save_track(void)
         return token_err;
     }
 
+    struct spotify_track_dto new_track;
+    memset(&new_track, 0, sizeof(new_track));
+
     char *json_response = NULL;
     esp_err_t fetch_err = sp_client_fetch_track(access_token, &json_response);
-    if (fetch_err != ESP_OK)
+
+    // --- HANDLE 204 (NO TRACK PLAYING) ---
+    if (fetch_err == ESP_ERR_NOT_FOUND)
+    {
+        ESP_LOGI(TAG, "No track currently playing (204).");
+        new_track.cover_state = SP_COVER_NONE;
+        sp_state_set_track_info(&new_track);
+        return ESP_OK;
+    }
+    else if (fetch_err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to fetch track info: %s", esp_err_to_name(fetch_err));
         return fetch_err;
     }
 
-    struct spotify_track_dto new_track;
+    // --- HANDLE 200 (TRACK PLAYING) ---
     esp_err_t parse_err = sp_parse_track(json_response, &new_track);
+
+    if (json_response != NULL)
+        free(json_response);
+
     if (parse_err != ESP_OK)
     {
         ESP_LOGE(TAG, "Failed to parse track info: %s", esp_err_to_name(parse_err));
         return parse_err;
     }
-    ESP_LOGI(TAG, "Track Fetched and parsed correctly!");
+
     ESP_LOGI(TAG, "Currently playing: '%s' by '%s'", new_track.track_name, new_track.artist_name);
 
     struct spotify_track_dto last_track;
@@ -75,6 +90,7 @@ esp_err_t sp_manager_fetch_and_save_track(void)
         }
         else
         {
+            ESP_LOGE(TAG, "Failed to save album art!");
             new_track.cover_state = SP_COVER_FAILED;
         }
     }
