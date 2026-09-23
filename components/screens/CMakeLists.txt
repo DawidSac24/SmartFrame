@@ -1,0 +1,23 @@
+idf_component_register(
+    SRCS 
+        "anim_screen.c"
+        "clock_screen.c"
+        "clock_themes.c"
+        "custom_img_screen.c"
+        "screens_init.c"
+        "spotify/spotify_screen.c"
+        "spotify/spotify_theme_core.c"
+        "spotify/spotify_theme_disk.c"
+        "spotify/spotify_theme_flat.c"
+        "weather_screen.c"
+        "weather_themes.c"                
+    INCLUDE_DIRS 
+        "include"
+    PRIV_INCLUDE_DIRS
+        "spotify"                 
+    REQUIRES 
+        "ui"                     
+        "gfx"                    
+        "api_spotify"
+        "api_weather"
+)
