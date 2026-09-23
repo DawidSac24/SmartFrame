@@ -5,7 +5,6 @@
 
 #include "esp_log.h"
 
-#include "app_state.h"
 #include "wifi.h"
 
 // private variables
@@ -17,13 +16,13 @@ QueueHandle_t sp_cmd_queue = NULL;
 // private functions
 void sp_task(void *pvParameters);
 
-esp_err_t spotify_init(void)
+esp_err_t spotify_init(uint32_t stack_size, UBaseType_t priority)
 {
   sp_manager_init();
   sp_cmd_register();
 
   TaskHandle_t task_handle = NULL;
-  BaseType_t returned = xTaskCreatePinnedToCore(sp_task, "spotify_task", 8192, NULL, PRIO_SPOTIFY_API, &task_handle, 0);
+  BaseType_t returned = xTaskCreatePinnedToCore(sp_task, "spotify_task", stack_size, NULL, priority, &task_handle, 0);
   if (returned != pdPASS)
   {
     ESP_LOGE(TAG, "Failed to create task!");

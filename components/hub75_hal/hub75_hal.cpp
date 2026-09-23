@@ -54,7 +54,7 @@ esp_err_t hub75_hal_init(void)
     }
 }
 
-void hub75_hal_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
+void hub75_hal_draw_pixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b)
 {
     if (dma_display != nullptr)
     {

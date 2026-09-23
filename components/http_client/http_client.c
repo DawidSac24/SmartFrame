@@ -117,6 +117,6 @@ esp_err_t http_client_download_file(const char *url, const char *filepath)
     storage_close_stream(file);
     esp_http_client_cleanup(client);
 
-    ESP_LOGI("HTTP", "Download complete. Total bytes written: %d", total_bytes);
+    ESP_LOGD("HTTP", "Download complete. Total bytes written: %d", total_bytes);
     return ESP_OK;
 }

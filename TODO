@@ -12,3 +12,7 @@
     - [] refactor the tasks
 - [] add data structures
 - [] maybe make the gfx a singleton or have a handle struct?
+
+
+
+One last thing: when booting the device, the screen starts by displaying the empty spotify screen with the vinyl arm playin one or two transitions in then out, let's correct this. Maybe booting animation, this gave me the idea of making a 

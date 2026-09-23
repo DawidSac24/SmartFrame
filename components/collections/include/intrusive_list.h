@@ -28,6 +28,24 @@ static inline bool list_is_empty(const struct intr_list *list)
     return list->head.next == &list->head;
 }
 
+static inline bool list_contains(struct intr_list *list, struct list_node *target)
+{
+    if (!list || !target)
+        return false;
+
+    struct list_node *current = &list->head;
+    do
+    {
+        if (current == target)
+        {
+            return true;
+        }
+        current = current->next;
+    } while (current != &list->head);
+
+    return false;
+}
+
 static inline void list_push_back(struct intr_list *list, struct list_node *node)
 {
     node->prev = list->head.prev;

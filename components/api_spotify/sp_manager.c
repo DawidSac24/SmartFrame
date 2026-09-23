@@ -14,8 +14,6 @@
 
 static const char *TAG = "spotify_manager";
 
-static uint8_t g_album_rgb_buffer[64 * 64 * 3];
-
 void sp_manager_init(void)
 {
     sp_auth_init();
@@ -47,7 +45,7 @@ esp_err_t sp_manager_fetch_and_save_track(void)
     // --- HANDLE 204 (NO TRACK PLAYING) ---
     if (fetch_err == ESP_ERR_NOT_FOUND)
     {
-        ESP_LOGI(TAG, "No track currently playing (204).");
+        ESP_LOGD(TAG, "No track currently playing (204).");
         new_track.cover_state = SP_COVER_NONE;
         sp_state_set_track_info(&new_track);
         return ESP_OK;
@@ -70,14 +68,14 @@ esp_err_t sp_manager_fetch_and_save_track(void)
         return parse_err;
     }
 
-    ESP_LOGI(TAG, "Currently playing: '%s' by '%s'", new_track.track_name, new_track.artist_name);
+    ESP_LOGD(TAG, "Currently playing: '%s' by '%s'", new_track.track_name, new_track.artist_name);
 
     struct spotify_track_dto last_track;
     spotify_get_track_info(&last_track);
 
     if (strcmp(last_track.cover_url, new_track.cover_url) != 0 || last_track.cover_state == SP_COVER_FAILED)
     {
-        ESP_LOGI(TAG, "Downloading album art...");
+        ESP_LOGD(TAG, "Downloading album art...");
         new_track.cover_state = SP_COVER_DOWNLOADING;
         sp_state_set_track_info(&new_track);
 
@@ -85,7 +83,7 @@ esp_err_t sp_manager_fetch_and_save_track(void)
 
         if (dl_err == ESP_OK)
         {
-            ESP_LOGI(TAG, "Album art saved to flash!");
+            ESP_LOGD(TAG, "Album art saved to flash!");
             new_track.cover_state = SP_COVER_NEW_FILE;
         }
         else

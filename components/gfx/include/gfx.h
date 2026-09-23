@@ -2,14 +2,22 @@
 
 #include "esp_err.h"
 
+enum gfx_font
+{
+    FONT_5x8,
+    FONT_8x16
+};
+
 esp_err_t gfx_init(void);
 
 void gfx_update(void);
 void gfx_clear(void);
 
 void gfx_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b);
-void gfx_print_text(int x, int y, const char *text); // Add font params later
 void gfx_draw_pixels(uint16_t x, uint16_t y, uint16_t with, uint16_t height, const uint8_t *buffer);
+void gfx_draw_line(int x0, int y0, int x1, int y1, uint8_t r, uint8_t g, uint8_t b);
+
+void gfx_draw_text(int x, int y, uint8_t r, uint8_t g, uint8_t b, const char *text, enum gfx_font font_type);
 
 void gfx_draw_screen(const uint8_t *buffer);
 

@@ -1,8 +1,8 @@
 #include "api_weather.h"
 #include "wea_priv.h"
 
-#include "app_state.h"
 #include "esp_console.h"
+#include "esp_log.h"
 #include "secrets.h"
 
 #include <string.h>
@@ -10,32 +10,35 @@
 
 static const char *TAG = "weather_cmd";
 
+// 1. Added "test" to the command list string array
 static const char *wea_cmd_strings[] = {
     "fetch",
-    "print"};
+    "print",
+    "test"};
 
+// Forward declarations
 static esp_err_t cmd_weather(int argc, char **argv);
 esp_err_t wea_cmd_fetch(void);
 esp_err_t wea_cmd_print(void);
+esp_err_t wea_cmd_test_mode(const char *condition);
+enum wea_cmd wea_str_to_cmd(const char *str);
 
 void wea_cmd_register(void)
 {
     esp_console_cmd_t cmd = {
         .command = "weather",
-        .help = "Manage the weather API (Args: print, fetch)",
-        .hint = "<print|fetch>",
+        .help = "Manage the weather API (Args: print, fetch, test <type>)",
+        .hint = "<print|fetch|test> [sun|night|clouds|rain|storm|snow]",
         .func = &cmd_weather,
     };
     esp_console_cmd_register(&cmd);
-
-    weather_cmd_queue = xQueueCreate(WEA_CMD_UNKNOWN, sizeof(enum wea_cmd));
 }
 
 void wea_cmd_send(enum wea_cmd cmd)
 {
-    if (weather_cmd_queue != NULL)
+    if (wea_cmd_queue != NULL)
     {
-        xQueueSend(weather_cmd_queue, &cmd, 0);
+        xQueueSend(wea_cmd_queue, &cmd, 0);
     }
 }
 
@@ -47,6 +50,7 @@ esp_err_t wea_cmd_dispatch(enum wea_cmd cmd)
         return wea_cmd_fetch();
     case WEA_CMD_PRINT:
         return wea_cmd_print();
+    // Note: WEA_CMD_TEST is handled directly in cmd_weather to pass the argument string safely!
     default:
         ESP_LOGE(TAG, "Unknown command received: %d", cmd);
         return ESP_ERR_INVALID_ARG;
@@ -74,8 +78,18 @@ esp_err_t cmd_weather(int argc, char **argv)
         return ESP_ERR_INVALID_ARG;
     }
 
-    wea_cmd_send(cmd);
+    // Special handling for test command which requires a secondary sub-argument (e.g., "weather test sun")
+    if (cmd == WEA_CMD_TEST)
+    {
+        if (argc < 3)
+        {
+            ESP_LOGE(TAG, "Missing test type! Use: weather test <sun|night|clouds|rain|storm|snow>");
+            return ESP_ERR_INVALID_ARG;
+        }
+        return wea_cmd_test_mode(argv[2]);
+    }
 
+    wea_cmd_send(cmd);
     ESP_LOGI(TAG, "Command '%s' dispatched to task.", argv[1]);
     return ESP_OK;
 }
@@ -93,15 +107,11 @@ enum wea_cmd wea_str_to_cmd(const char *str)
     return WEA_CMD_UNKNOWN;
 }
 
-esp_err_t wea_cmd_fetch()
+esp_err_t wea_cmd_fetch(void)
 {
     ESP_LOGI(TAG, "Forcing a manual weather fetch...");
 
-    struct localisation loc;
-    loc.latitude = LATITUDE;
-    loc.longitude = LONGITUDE;
-
-    esp_err_t err = wea_fetch(&loc);
+    esp_err_t err = wea_fetch(LATITUDE, LONGITUDE);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Error fetching weather data: %s", esp_err_to_name(err));
@@ -109,40 +119,109 @@ esp_err_t wea_cmd_fetch()
     return err;
 }
 
-esp_err_t wea_cmd_print()
+esp_err_t wea_cmd_test_mode(const char *condition)
 {
-    if (xSemaphoreTake(global_state_mutex, pdMS_TO_TICKS(100)))
-    {
-        printf("\n--- CURRENT WEATHER STATE ---\n");
-        printf("ID: %d\n", global_state.weather.id);
-        printf("Temperature: %.2f\n", global_state.weather.temperature);
-        printf("Humidity: %.2f\n", global_state.weather.humidity);
-        printf("Pressure: %.2f\n", global_state.weather.pressure);
-        printf("Icon: %s\n", global_state.weather.icon);
-        printf("Main: %s\n", global_state.weather.main);
-        printf("Description: %s\n", global_state.weather.description);
+    struct weather_dto test_dto = {0};
+    test_dto.temperature = 21.5f;
+    test_dto.humidity = 65.0f;
+    test_dto.pressure = 1013.0f;
+    test_dto.is_valid = true;
 
-        if (global_state.weather.last_fetched == 0)
+    if (strcmp(condition, "sun") == 0)
+    {
+        test_dto.id = 800;
+        strcpy(test_dto.icon, "01d");
+        strcpy(test_dto.main, "Clear");
+        strcpy(test_dto.description, "clear sky");
+    }
+    else if (strcmp(condition, "night") == 0)
+    {
+        test_dto.id = 800;
+        strcpy(test_dto.icon, "01n");
+        strcpy(test_dto.main, "Clear");
+        strcpy(test_dto.description, "clear night sky");
+    }
+    else if (strcmp(condition, "clouds") == 0)
+    {
+        test_dto.id = 804;
+        strcpy(test_dto.icon, "04d");
+        strcpy(test_dto.main, "Clouds");
+        strcpy(test_dto.description, "overcast clouds");
+    }
+    else if (strcmp(condition, "rain") == 0)
+    {
+        test_dto.id = 500;
+        strcpy(test_dto.icon, "10d");
+        strcpy(test_dto.main, "Rain");
+        strcpy(test_dto.description, "light rain");
+    }
+    else if (strcmp(condition, "storm") == 0)
+    {
+        test_dto.id = 200;
+        strcpy(test_dto.icon, "11d");
+        strcpy(test_dto.main, "Thunderstorm");
+        strcpy(test_dto.description, "thunderstorm with light rain");
+    }
+    else if (strcmp(condition, "snow") == 0)
+    {
+        test_dto.id = 600;
+        strcpy(test_dto.icon, "13d");
+        strcpy(test_dto.main, "Snow");
+        strcpy(test_dto.description, "light snow");
+    }
+    else
+    {
+        printf("Unknown test condition: '%s'. Available: sun, night, clouds, rain, storm, snow\n", condition);
+        return ESP_ERR_INVALID_ARG;
+    }
+
+    weather_set_override(&test_dto);
+    printf("Weather simulation override successfully active for: %s\n", condition);
+    return ESP_OK;
+}
+
+esp_err_t wea_cmd_print(void)
+{
+    struct weather_dto dto;
+    esp_err_t err = weather_get_info(&dto);
+
+    if (err != ESP_OK)
+    {
+        printf("Error: Could not retrieve weather state (Code: %s)\n", esp_err_to_name(err));
+        return err;
+    }
+
+    printf("\n--- CURRENT WEATHER STATE ---\n");
+
+    if (!dto.is_valid)
+    {
+        printf("Status: No valid weather data available yet.\n");
+    }
+    else
+    {
+        printf("ID: %d\n", dto.id);
+        printf("Temperature: %.2f\n", dto.temperature);
+        printf("Humidity: %.2f\n", dto.humidity);
+        printf("Pressure: %.2f\n", dto.pressure);
+        printf("Icon: %s\n", dto.icon);
+        printf("Main: %s\n", dto.main);
+        printf("Description: %s\n", dto.description);
+
+        if (dto.last_fetched == 0)
         {
-            printf("Last Fetched: Never (Waiting for first download...)\n");
+            printf("Last Fetched: Never (Simulation or Waiting for download...)\n");
         }
         else
         {
             struct tm timeinfo;
             char time_string[64];
 
-            localtime_r(&global_state.weather.last_fetched, &timeinfo);
+            localtime_r(&dto.last_fetched, &timeinfo);
             strftime(time_string, sizeof(time_string), "%c", &timeinfo);
             printf("Last Fetched: %s\n", time_string);
         }
+    }
 
-        printf("-----------------------------\n\n");
-        xSemaphoreGive(global_state_mutex);
-    }
-    else
-    {
-        printf("Error: Could not lock Mutex!\n");
-        return ESP_ERR_TIMEOUT;
-    }
+    printf("-----------------------------\n\n");
     return ESP_OK;
 }

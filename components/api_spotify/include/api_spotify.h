@@ -31,8 +31,10 @@ struct spotify_track_dto
     enum sp_cover_state_t cover_state;
 };
 
-esp_err_t spotify_init(void);
+esp_err_t spotify_init(uint32_t stack_size, UBaseType_t priority);
 enum sp_api_state spotify_get_state();
-esp_err_t spotify_get_track_info(struct spotify_track_dto *out_state);
+
+esp_err_t spotify_get_track_info(struct spotify_track_dto *out_track);
+esp_err_t sp_state_set_track_info(const struct spotify_track_dto *track_info);
 
 esp_err_t spotify_send_auth_code(const char *auth_code);
