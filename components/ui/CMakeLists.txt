@@ -1,3 +1,3 @@
-idf_component_register(SRCS "ui_task.c"
-                       INCLUDE_DIRS "include"
-                       REQUIRES screen memory collections esp_timer gfx api_spotify)
+idf_component_register(SRCS "ui_cmd.c" "ui_task.c" "screen_scheduler.c"
+                       INCLUDE_DIRS "include" 
+                       REQUIRES memory collections esp_timer gfx api_spotify console)
