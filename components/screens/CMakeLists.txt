@@ -1,9 +1,11 @@
 idf_component_register(
     SRCS 
-        "anim_screen.c"
+       
         "clock_screen.c"
         "clock_themes.c"
         "custom_img_screen.c"
+        "anim_gol_screen.c"
+        "anim_gol_themes.c"
         "screens_init.c"
         "spotify/spotify_screen.c"
         "spotify/spotify_theme_core.c"
@@ -20,4 +22,6 @@ idf_component_register(
         "gfx"                    
         "api_spotify"
         "api_weather"
+        "lodepng"
+        "web_server"
 )

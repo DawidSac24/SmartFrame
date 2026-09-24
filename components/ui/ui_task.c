@@ -13,6 +13,7 @@ static const char *TAG = "ui_task";
 
 static struct screen *sp_screen = NULL;
 static bool s_spotify_exclusive = true;
+static bool s_spotify_enabled = true; // Enabled by default
 
 void ui_task(void *pvParameters);
 
@@ -61,7 +62,7 @@ void ui_task(void *pvParameters)
         float dt_ms = (float)(now_us - last_time) / 1000.0f;
         last_time = now_us;
 
-        if (sp_screen)
+        if (sp_screen && s_spotify_enabled)
         {
             struct spotify_track_dto track;
             spotify_get_track_info(&track);
@@ -103,6 +104,19 @@ void ui_task(void *pvParameters)
                 sched_add_screen(sp_screen);
                 is_in_sched = true;
             }
+            else if (sp_screen && !s_spotify_enabled)
+            {
+                if (is_in_priority)
+                {
+                    sched_clear_priority();
+                    is_in_priority = false;
+                }
+                if (is_in_sched)
+                {
+                    sched_remove_screen(sp_screen);
+                    is_in_sched = false;
+                }
+            }
             else if (!should_be_sched && is_in_sched)
             {
                 sched_remove_screen(sp_screen);
@@ -132,9 +146,38 @@ void ui_task(void *pvParameters)
 void ui_task_set_spotify_screen(struct screen *scr)
 {
     sp_screen = scr;
+    if (sp_screen)
+    {
+        sched_register_screen(sp_screen); // Auto-register in master list!
+    }
+}
+
+void ui_task_set_spotify_enabled(bool enabled)
+{
+    s_spotify_enabled = enabled;
+    if (!enabled)
+    {
+        sched_clear_priority();
+        sched_remove_screen(sp_screen);
+    }
+}
+
+bool ui_task_get_spotify_enabled(void)
+{
+    return s_spotify_enabled;
+}
+
+struct screen *ui_task_get_spotify_screen(void)
+{
+    return sp_screen;
 }
 
 void ui_task_set_spotify_exclusive(bool exclusive)
 {
     s_spotify_exclusive = exclusive;
+}
+
+bool ui_task_get_spotify_exclusive(void)
+{
+    return s_spotify_exclusive;
 }

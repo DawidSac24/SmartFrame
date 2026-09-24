@@ -27,6 +27,23 @@ void gfx_clear(void)
     hub75_hal_clear();
 }
 
+void gfx_set_brightness(uint8_t brightness)
+{
+    hub75_hal_set_brightness(brightness);
+}
+uint8_t gfx_get_brightness(void)
+{
+    return hub75_hal_get_brightness();
+}
+void gfx_set_rotation(uint8_t rotation)
+{
+    hub75_hal_set_rotation(rotation);
+}
+uint8_t gfx_get_rotation(void)
+{
+    return hub75_hal_get_rotation();
+}
+
 void gfx_draw_pixel(int x, int y, uint8_t r, uint8_t g, uint8_t b)
 {
     hub75_hal_draw_pixel(x, y, r, g, b);

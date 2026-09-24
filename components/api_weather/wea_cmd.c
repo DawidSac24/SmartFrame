@@ -111,14 +111,13 @@ esp_err_t wea_cmd_fetch(void)
 {
     ESP_LOGI(TAG, "Forcing a manual weather fetch...");
 
-    esp_err_t err = wea_fetch(LATITUDE, LONGITUDE);
+    esp_err_t err = wea_manager_fetch_and_save_weather(LATITUDE, LONGITUDE);
     if (err != ESP_OK)
     {
         ESP_LOGE(TAG, "Error fetching weather data: %s", esp_err_to_name(err));
     }
     return err;
 }
-
 esp_err_t wea_cmd_test_mode(const char *condition)
 {
     struct weather_dto test_dto = {0};
@@ -132,51 +131,65 @@ esp_err_t wea_cmd_test_mode(const char *condition)
         test_dto.id = 800;
         strcpy(test_dto.icon, "01d");
         strcpy(test_dto.main, "Clear");
-        strcpy(test_dto.description, "clear sky");
     }
     else if (strcmp(condition, "night") == 0)
     {
         test_dto.id = 800;
         strcpy(test_dto.icon, "01n");
-        strcpy(test_dto.main, "Clear");
-        strcpy(test_dto.description, "clear night sky");
+        strcpy(test_dto.main, "Clear Night");
     }
     else if (strcmp(condition, "clouds") == 0)
     {
         test_dto.id = 804;
         strcpy(test_dto.icon, "04d");
         strcpy(test_dto.main, "Clouds");
-        strcpy(test_dto.description, "overcast clouds");
     }
     else if (strcmp(condition, "rain") == 0)
     {
         test_dto.id = 500;
         strcpy(test_dto.icon, "10d");
         strcpy(test_dto.main, "Rain");
-        strcpy(test_dto.description, "light rain");
     }
     else if (strcmp(condition, "storm") == 0)
     {
         test_dto.id = 200;
         strcpy(test_dto.icon, "11d");
         strcpy(test_dto.main, "Thunderstorm");
-        strcpy(test_dto.description, "thunderstorm with light rain");
     }
     else if (strcmp(condition, "snow") == 0)
     {
         test_dto.id = 600;
         strcpy(test_dto.icon, "13d");
         strcpy(test_dto.main, "Snow");
-        strcpy(test_dto.description, "light snow");
     }
     else
     {
-        printf("Unknown test condition: '%s'. Available: sun, night, clouds, rain, storm, snow\n", condition);
+        printf("Unknown test condition: '%s'\n", condition);
         return ESP_ERR_INVALID_ARG;
     }
 
+    printf("Setting override to %s. Downloading icon '%s.png'...\n", condition, test_dto.icon);
+
+    // Set state to DOWNLOADING so UI waits
+    test_dto.icon_state = WEA_ICON_DOWNLOADING;
     weather_set_override(&test_dto);
-    printf("Weather simulation override successfully active for: %s\n", condition);
+
+    // Download the test image to LittleFS
+    esp_err_t dl_err = wea_client_download_img(test_dto.icon, "/fs/weather.png");
+
+    if (dl_err == ESP_OK)
+    {
+        test_dto.icon_state = WEA_ICON_NEW_FILE;
+        printf("Test icon downloaded successfully! UI will decode it now.\n");
+    }
+    else
+    {
+        test_dto.icon_state = WEA_ICON_FAILED;
+        printf("Failed to download test icon.\n");
+    }
+
+    // Update the override state with the final file status
+    weather_set_override(&test_dto);
     return ESP_OK;
 }
 

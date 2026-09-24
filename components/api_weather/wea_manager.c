@@ -1,56 +1,68 @@
 #include "wea_priv.h"
-#include "wifi.h"
+#include "api_weather.h"
 #include "esp_log.h"
+#include <string.h>
 
 static const char *TAG = "wea_manager";
-QueueHandle_t wea_cmd_queue = NULL;
 
-static struct
+esp_err_t wea_manager_init(void)
 {
-    float lat;
-    float lon;
-} s_loc;
+    return wea_state_init();
+}
 
-static void weather_task(void *pvParameters)
+esp_err_t wea_manager_fetch_and_save_weather(float lat, float lon)
 {
-    TickType_t current_delay = 0;
-    const TickType_t POLL_INTERVAL_MS = pdMS_TO_TICKS(20 * 60 * 1000);
+    char *json_response = NULL;
+    esp_err_t fetch_err = wea_client_fetch_weather(lat, lon, &json_response);
 
-    while (1)
+    if (fetch_err != ESP_OK)
     {
-        wait_for_wifi_connection(portMAX_DELAY);
+        ESP_LOGE(TAG, "Failed to fetch weather JSON: %s", esp_err_to_name(fetch_err));
+        return fetch_err;
+    }
 
-        enum wea_cmd incoming_cmd;
-        if (xQueueReceive(wea_cmd_queue, &incoming_cmd, current_delay))
+    struct weather_dto new_weather;
+    memset(&new_weather, 0, sizeof(new_weather));
+
+    esp_err_t parse_err = wea_parse(json_response, &new_weather);
+    if (json_response != NULL)
+        free(json_response);
+
+    if (parse_err != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to parse weather info: %s", esp_err_to_name(parse_err));
+        return parse_err;
+    }
+
+    // --- ICON DOWNLOAD LOGIC ---
+    struct weather_dto last_weather;
+    weather_get_info(&last_weather);
+
+    if (strcmp(last_weather.icon, new_weather.icon) != 0 || last_weather.icon_state == WEA_ICON_FAILED)
+    {
+        ESP_LOGD(TAG, "Downloading new weather icon...");
+        new_weather.icon_state = WEA_ICON_DOWNLOADING;
+        wea_state_set(&new_weather); // Update state to downloading
+
+        // Delegate to client
+        esp_err_t dl_err = wea_client_download_img(new_weather.icon, "/fs/weather.png");
+
+        if (dl_err == ESP_OK)
         {
-            wea_cmd_dispatch(incoming_cmd);
-            if (incoming_cmd == WEA_CMD_FETCH)
-            {
-                current_delay = POLL_INTERVAL_MS; // Reset timer on manual fetch
-            }
+            ESP_LOGD(TAG, "Weather icon saved to LittleFS!");
+            new_weather.icon_state = WEA_ICON_NEW_FILE;
         }
         else
         {
-            wea_fetch(s_loc.lat, s_loc.lon);
-            current_delay = POLL_INTERVAL_MS;
+            ESP_LOGE(TAG, "Failed to save weather icon!");
+            new_weather.icon_state = WEA_ICON_FAILED;
         }
     }
-}
-
-esp_err_t weather_init(float latitude, float longitude)
-{
-    if (wea_state_init() != ESP_OK)
-        return ESP_FAIL;
-
-    s_loc.lat = latitude;
-    s_loc.lon = longitude;
-
-    wea_cmd_queue = xQueueCreate(10, sizeof(enum wea_cmd));
-    wea_cmd_register();
-
-    if (xTaskCreatePinnedToCore(weather_task, "wea_task", 6144, NULL, 3, NULL, 0) != pdPASS)
+    else
     {
-        return ESP_FAIL;
+        new_weather.icon_state = last_weather.icon_state;
     }
+
+    wea_state_set(&new_weather);
     return ESP_OK;
 }

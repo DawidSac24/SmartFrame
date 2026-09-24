@@ -3,11 +3,12 @@
 #include "esp_http_client.h"
 #include "esp_crt_bundle.h"
 #include "esp_log.h"
+#include "http_client.h"
 
 #define WEATHER_API_URL "https://api.openweathermap.org/data/2.5/weather?lat=%.4f&lon=%.4f&appid=%s&units=metric"
 static const char *TAG = "wea_client";
 
-esp_err_t wea_fetch(float lat, float lon)
+esp_err_t wea_client_fetch_weather(float lat, float lon, char **out_json)
 {
     char url_buffer[200];
     snprintf(url_buffer, sizeof(url_buffer), WEATHER_API_URL, lat, lon, WEATHER_API_KEY);
@@ -38,22 +39,32 @@ esp_err_t wea_fetch(float lat, float lon)
         if (total_read_len > 0 && esp_http_client_get_status_code(client) == 200)
         {
             json_buffer[total_read_len] = '\0';
-
-            struct weather_dto temp_dto = {0};
-            if (wea_parse(json_buffer, &temp_dto) == ESP_OK)
-            {
-                wea_state_set(&temp_dto); // Safely push to state!
-                ESP_LOGI(TAG, "Weather fetched and updated.");
-            }
+            *out_json = json_buffer; // Pass string pointer back to manager
         }
         else
         {
             ESP_LOGE(TAG, "API Error: Code %d", esp_http_client_get_status_code(client));
+            free(json_buffer);
             err = ESP_FAIL;
         }
     }
+    else
+    {
+        free(json_buffer);
+    }
 
-    free(json_buffer);
     esp_http_client_cleanup(client);
     return err;
+}
+
+esp_err_t wea_client_download_img(const char *icon_code, const char *dest_path)
+{
+    if (!icon_code || !dest_path)
+        return ESP_ERR_INVALID_ARG;
+
+    char icon_url[128];
+    snprintf(icon_url, sizeof(icon_url), "https://openweathermap.org/img/wn/%s.png", icon_code);
+
+    ESP_LOGI(TAG, "Downloading weather icon from: %s", icon_url);
+    return http_client_download_file(icon_url, dest_path);
 }

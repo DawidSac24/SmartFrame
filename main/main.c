@@ -21,6 +21,7 @@
 #include "cli.h"
 #include "secrets.h"
 #include "api_spotify.h"
+#include "http_client.h"
 
 enum task_priority_level
 {
@@ -46,8 +47,8 @@ void app_main(void)
   ui_task_set_spotify_screen(sp_scr);
 
   cli_init();
-
   wifi_init();
+  http_client_init();
 
   ESP_LOGI("main", "Waiting for Wi-Fi connection before starting network services...");
   wait_for_wifi_connection(portMAX_DELAY);

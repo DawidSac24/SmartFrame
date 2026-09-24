@@ -6,14 +6,11 @@
     <title>Smart Frame Controller</title>
     <style>
         :root {
-            /* Base Light Theme */
             --bg-color: #f4f4f5;
             --card-bg: #ffffff;
             --text-color: #18181b;
             --text-muted: #71717a;
             --border-color: #e4e4e7;
-            
-            /* Accent Colors (Default Orange) */
             --accent-color: #f97316;
             --accent-hover: #ea580c;
             --danger-color: #ef4444;
@@ -46,7 +43,7 @@
             line-height: 1.5;
             transition: background-color 0.3s, color 0.3s;
             padding: 1rem;
-            padding-bottom: 6rem; /* Extra padding so the FAB doesn't hide content */
+            padding-bottom: 6rem;
         }
 
         .container {
@@ -113,7 +110,7 @@
 
         .list-item:last-child { border-bottom: none; }
 
-        .item-info h3 { font-size: 1rem; margin-bottom: 0.25rem; }
+        .item-info h3 { font-size: 1rem; margin-bottom: 0.25rem; text-transform: capitalize; }
         .item-info p { font-size: 0.875rem; color: var(--text-muted); }
 
         .controls button {
@@ -134,13 +131,51 @@
 
         .controls button.danger { color: var(--danger-color); border-color: var(--danger-color); }
 
-        /* Visualization Mockup */
+        .screen-settings {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.75rem;
+            padding: 0.75rem;
+            background: rgba(125, 125, 125, 0.08);
+            border-radius: 0.5rem;
+            align-items: center;
+            font-size: 0.875rem;
+            flex-wrap: wrap;
+        }
+
+        .setting-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .setting-group label {
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        select, input[type="number"] {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 0.35rem 0.5rem;
+            border-radius: 0.35rem;
+            font-size: 0.875rem;
+        }
+
+        input[type="checkbox"] {
+            accent-color: var(--accent-color);
+            width: 1.1rem;
+            height: 1.1rem;
+            cursor: pointer;
+        }
+
         .visualization-box {
             width: 100%;
-            max-width: 200px;
+            max-width: 140px;
             aspect-ratio: 1/1;
             background: #000;
-            margin: 1rem auto;
+            margin: 0.75rem auto 0.25rem auto;
             border-radius: 4px;
             display: flex;
             align-items: center;
@@ -148,6 +183,11 @@
             position: relative;
             box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
             border: 2px solid #333;
+            transition: border-color 0.2s, transform 0.1s;
+        }
+
+        .visualization-box:active {
+            transform: scale(0.98);
         }
 
         .grid-overlay {
@@ -161,9 +201,8 @@
             pointer-events: none;
         }
 
-        .mock-content { color: var(--accent-color); font-weight: bold; z-index: 1; text-align: center; }
+        .mock-content { color: var(--accent-color); font-weight: bold; font-size: 0.8rem; z-index: 1; text-align: center; }
 
-        /* Floating Action Button (Save) */
         .fab-save {
             position: fixed;
             bottom: 2rem;
@@ -173,16 +212,13 @@
             color: white;
             border: none;
             padding: 1rem 3rem;
-            border-radius: 9999px; /* Pill shape */
+            border-radius: 9999px;
             font-size: 1.1rem;
             font-weight: 600;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
             transition: transform 0.2s, background-color 0.2s;
             z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
         }
 
         .fab-save:hover {
@@ -190,13 +226,13 @@
             background-color: var(--accent-hover);
         }
 
-        .fab-save:active {
-            transform: translate(-50%, 0);
-        }
-
+        .fab-save:active { transform: translate(-50%, 0); }
     </style>
 </head>
 <body class="dark-theme accent-orange">
+
+<!-- Hidden file input for the Custom Image screen -->
+<input type="file" id="custom-image-input" accept="image/png, image/jpeg" style="display: none;" onchange="uploadCustomImage()">
 
 <div class="container">
     <header>
@@ -208,33 +244,67 @@
     </header>
 
     <main>
-        <!-- Active Screens (Scheduler List) -->
+        <!-- Active Screens -->
         <details open>
             <summary>Active Screens</summary>
-            <div class="content" id="active-list">
-                <!-- Populated by JS -->
-            </div>
+            <div class="content" id="active-list"></div>
         </details>
 
         <!-- Screen Library -->
         <details>
             <summary>Screen Library</summary>
-            <div class="content" id="library-list">
-                <!-- Populated by JS -->
-            </div>
+            <div class="content" id="library-list"></div>
         </details>
 
-        <!-- Settings & API Config -->
-        <details>
+        <!-- System & Settings -->
+        <details open>
             <summary>Settings</summary>
             <div class="content">
+                <!-- Display Brightness -->
+                <div class="list-item">
+                    <div class="item-info">
+                        <h3>Display Brightness</h3>
+                        <p>Adjust matrix luminosity</p>
+                    </div>
+                    <div class="setting-group">
+                        <input type="range" id="brightness-slider" min="1" max="255" value="128" 
+                               oninput="document.getElementById('brightness-val').innerText = this.value">
+                        <span id="brightness-val" style="width: 2rem; text-align: right; font-variant-numeric: tabular-nums;">128</span>
+                    </div>
+                </div>
+
+                <!-- Display Orientation -->
+                <div class="list-item">
+                    <div class="item-info">
+                        <h3>Orientation</h3>
+                        <p>Rotate the screen</p>
+                    </div>
+                    <div class="setting-group">
+                        <select id="orientation-select">
+                            <option value="0">0° (Normal)</option>
+                            <option value="1">90°</option>
+                            <option value="2">180°</option>
+                            <option value="3">270°</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="list-item">
+                    <div class="item-info">
+                        <h3>Spotify Exclusivity</h3>
+                        <p>Take over display when track is playing</p>
+                    </div>
+                    <div>
+                        <input type="checkbox" id="spotify-exclusive-toggle">
+                    </div>
+                </div>
                 <div class="list-item">
                     <div class="item-info">
                         <h3>Spotify Connection</h3>
-                        <p id="sp-status" style="color: var(--danger-color);">Not Authenticated</p>
+                        <p id="sp-status" style="color: var(--text-muted);">Manage authorization</p>
                     </div>
                     <div class="controls">
-                        <button class="primary" onclick="handleSpotifyAuth()">Connect</button>
+                        <button class="primary" onclick="window.location.href='/login'">Connect</button>
                     </div>
                 </div>
             </div>
@@ -242,51 +312,92 @@
     </main>
 </div>
 
-<!-- Floating Save Button -->
-<button class="fab-save" onclick="syncToDevice()">
-    Save
-</button>
+<button class="fab-save" onclick="syncToDevice()">Save</button>
 
 <script>
-// State Management (Simulating the ESP32 Backend)
-    let activeScreens = [
-        { id: 'spotify', name: 'Spotify Player', desc: 'Shows current track and album art' },
-        { id: 'weather', name: 'Local Weather', desc: 'Current temperature and forecast' }
-    ];
+    let activeScreens = [];
+    let libraryScreens = [];
+    let spotifyExclusive = true;
 
-    let libraryScreens = [
-        { id: 'clock', name: 'Digital Clock', desc: 'Simple time and date' },
-        { id: 'custom', name: 'Custom Image', desc: 'Upload a static image', imageData: null }
-    ];
+    const screenDescriptions = {
+        spotify: 'Displays current playback & animated vinyl art',
+        weather: 'Live temperature, conditions & animated icons',
+        clock: 'Digital time, seconds & date',
+        custom_img: 'Custom user uploaded image'
+    };
 
     const activeListEl = document.getElementById('active-list');
     const libraryListEl = document.getElementById('library-list');
 
+    // Fetch config on initial page load
+    async function loadConfig() {
+        try {
+            const res = await fetch('/api/screens');
+            if (!res.ok) throw new Error("Failed to reach server");
+            const data = await res.json();
+
+            // Populate Settings
+            spotifyExclusive = !!data.spotify_exclusive;
+            document.getElementById('spotify-exclusive-toggle').checked = spotifyExclusive;
+            
+            if (data.brightness !== undefined) {
+                document.getElementById('brightness-slider').value = data.brightness;
+                document.getElementById('brightness-val').innerText = data.brightness;
+            }
+            if (data.orientation !== undefined) {
+                document.getElementById('orientation-select').value = data.orientation;
+            }
+
+            activeScreens = [];
+            libraryScreens = [];
+
+            data.screens.forEach(s => {
+                const item = {
+                    id: s.id,
+                    name: s.id === 'custom_img' ? 'Custom Image' : s.id.charAt(0).toUpperCase() + s.id.slice(1),
+                    desc: screenDescriptions[s.id] || 'Custom Screen',
+                    duration: s.duration || 10,
+                    theme: s.theme || 'default',
+                    themes: s.themes || ['default'],
+                    active: s.active
+                };
+
+                if (s.active) {
+                    activeScreens.push(item);
+                } else {
+                    libraryScreens.push(item);
+                }
+            });
+
+            renderLists();
+        } catch (e) {
+            console.warn("Could not load /api/screens, using mock defaults:", e);
+            // Default mock fallback if testing offline
+            activeScreens = [
+                { id: 'spotify', name: 'Spotify', desc: screenDescriptions.spotify, duration: 15, theme: 'spinning_disk', themes: ['default', 'square', 'disk', 'spinning_disk'] },
+                { id: 'weather', name: 'Weather', desc: screenDescriptions.weather, duration: 8, theme: 'default', themes: ['default'] },
+                { id: 'custom_img', name: 'Custom Image', desc: screenDescriptions.custom_img, duration: 10, theme: 'default', themes: ['default'] }
+            ];
+            libraryScreens = [
+                { id: 'clock', name: 'Clock', desc: screenDescriptions.clock, duration: 10, theme: 'default', themes: ['default'] }
+            ];
+            renderLists();
+        }
+    }
+
     function renderLists() {
         activeListEl.innerHTML = '';
         activeScreens.forEach((screen, index) => {
-            
-            // Check if this is the custom image screen
-            let isCustom = screen.id === 'custom';
-            let previewContent = '';
-            
-            if (isCustom) {
-                let bgStyle = screen.imageData ? `background-image: url(${screen.imageData}); background-size: cover;` : '';
-                previewContent = `
-                    <div class="visualization-box" style="cursor: pointer; ${bgStyle}" onclick="document.getElementById('file-${index}').click()">
-                        <div class="grid-overlay"></div>
-                        <input type="file" id="file-${index}" hidden accept="image/*" onchange="handleImageUpload(event, ${index})">
-                        ${!screen.imageData ? `<div class="mock-content" style="color: white; font-weight: normal;">Click to<br>Upload</div>` : ''}
-                    </div>
-                `;
-            } else {
-                previewContent = `
-                    <div class="visualization-box">
-                        <div class="grid-overlay"></div>
-                        <div class="mock-content">${screen.name}<br><small>64x64</small></div>
-                    </div>
-                `;
-            }
+            const themeOptions = screen.themes.map(t => 
+                `<option value="${t}" ${t === screen.theme ? 'selected' : ''}>${t.replace('_', ' ')}</option>`
+            ).join('');
+
+            const isCustom = screen.id === 'custom_img';
+            const vizBoxStyles = isCustom ? 'cursor: pointer; border-color: var(--accent-color);' : '';
+            const vizBoxClick = isCustom ? `onclick="document.getElementById('custom-image-input').click()"` : '';
+            const vizBoxTitle = isCustom ? `title="Click to upload an image"` : '';
+            const mockTextId = isCustom ? `id="mock-custom_img"` : '';
+            const extraHint = isCustom ? `<br><small style="font-weight:normal; color:#fff;">Click to Upload</small>` : '';
 
             activeListEl.innerHTML += `
                 <div class="list-item" style="flex-direction: column; align-items: stretch;">
@@ -301,12 +412,31 @@
                             <button class="danger" onclick="removeScreen(${index})">✕</button>
                         </div>
                     </div>
-                    ${previewContent}
+
+                    <div class="screen-settings">
+                        <div class="setting-group">
+                            <label>Duration:</label>
+                            <input type="number" min="1" max="300" value="${screen.duration}" 
+                                   onchange="updateDuration(${index}, this.value)"> sec
+                        </div>
+                        <div class="setting-group">
+                            <label>Theme:</label>
+                            <select onchange="updateTheme(${index}, this.value)">
+                                ${themeOptions}
+                            </select>
+                        </div>
+                        ${isCustom ? `<button class="danger" onclick="clearCustomImage()" style="margin-left: auto;">Clear Image</button>` : ''}
+                    </div>
+
+                    <div class="visualization-box" style="${vizBoxStyles}" ${vizBoxClick} ${vizBoxTitle}>
+                        <div class="grid-overlay"></div>
+                        <div class="mock-content" ${mockTextId}>${screen.name}<br><small>${screen.theme}</small>${extraHint}</div>
+                    </div>
                 </div>
             `;
         });
 
-        if(activeScreens.length === 0) {
+        if (activeScreens.length === 0) {
             activeListEl.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 1rem 0;">No active screens.</p>';
         }
 
@@ -326,48 +456,90 @@
         });
     }
 
-    // Canvas Resizing Logic (Client-Side)
-    function handleImageUpload(event, index) {
-        const file = event.target.files[0];
-        if (!file) return;
+    // --- NEW: Custom Image Upload Logic ---
+    async function uploadCustomImage() {
+        const fileInput = document.getElementById('custom-image-input');
+        if (!fileInput.files.length) return;
+        
+        // Grab the text element inside the preview square to show progress
+        const mockContent = document.getElementById('mock-custom_img');
+        const originalHTML = mockContent ? mockContent.innerHTML : "Custom Image";
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const img = new Image();
-            img.onload = function() {
-                // Create a 64x64 canvas
-                const canvas = document.createElement('canvas');
-                canvas.width = 64;
-                canvas.height = 64;
-                const ctx = canvas.getContext('2d');
+        if (mockContent) mockContent.innerHTML = "Processing...";
 
-                // Crop and center the image to a square before resizing
-                const size = Math.min(img.width, img.height);
-                const startX = (img.width - size) / 2;
-                const startY = (img.height - size) / 2;
+        const file = fileInput.files[0];
+        const img = new Image();
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Force exactly 64x64 resolution
+        canvas.width = 64;
+        canvas.height = 64;
+
+        img.onload = async () => {
+            ctx.drawImage(img, 0, 0, 64, 64);
+            
+            canvas.toBlob(async (blob) => {
+                if (mockContent) mockContent.innerHTML = "Uploading...";
+                try {
+                    const response = await fetch('/api/upload_image', {
+                        method: 'POST',
+                        body: blob,
+                        headers: { 'Content-Type': 'image/png' }
+                    });
+                    
+                    if (response.ok) {
+                        if (mockContent) mockContent.innerHTML = "<span style='color: var(--success-color);'>Success!</span>";
+                    } else {
+                        if (mockContent) mockContent.innerHTML = "<span style='color: var(--danger-color);'>Failed</span>";
+                    }
+                } catch (err) {
+                    if (mockContent) mockContent.innerHTML = "<span style='color: var(--danger-color);'>Error</span>";
+                }
                 
-                // Draw resized image to canvas
-                ctx.drawImage(img, startX, startY, size, size, 0, 0, 64, 64);
+                // Reset the text and clear the input so you can upload another file later
+                setTimeout(() => { 
+                    if (mockContent) mockContent.innerHTML = originalHTML; 
+                    fileInput.value = ""; 
+                }, 2000);
                 
-                // Export as JPEG (Quality 0.9) and save to state
-                activeScreens[index].imageData = canvas.toDataURL('image/jpeg', 0.9);
-                renderLists();
-            };
-            img.src = e.target.result;
+            }, 'image/png');
         };
-        reader.readAsDataURL(file);
+        img.src = URL.createObjectURL(file);
+    }
+
+    async function clearCustomImage() {
+        const mockContent = document.getElementById('mock-custom_img');
+        if (mockContent) mockContent.innerHTML = "Clearing...";
+        try {
+            await fetch('/api/clear_image', { method: 'POST' });
+            setTimeout(() => {
+                if (mockContent) mockContent.innerHTML = "Custom Image<br><small>default</small><br><small style='font-weight:normal; color:#fff;'>Click to Upload</small>";
+            }, 1000);
+        } catch (e) {
+            if (mockContent) mockContent.innerHTML = "Error";
+        }
+    }
+
+    function updateDuration(index, val) {
+        activeScreens[index].duration = parseInt(val, 10) || 5;
+    }
+
+    function updateTheme(index, val) {
+        activeScreens[index].theme = val;
+        renderLists();
     }
 
     function addScreen(libraryIndex) {
         const screen = libraryScreens.splice(libraryIndex, 1)[0];
+        screen.active = true;
         activeScreens.push(screen);
         renderLists();
     }
 
     function removeScreen(activeIndex) {
         const screen = activeScreens.splice(activeIndex, 1)[0];
-        // Reset image data when returning to library
-        if(screen.id === 'custom') screen.imageData = null; 
+        screen.active = false;
         libraryScreens.push(screen);
         renderLists();
     }
@@ -392,36 +564,56 @@
         document.body.classList.toggle('accent-orange');
     }
 
-    function handleSpotifyAuth() {
-        document.getElementById('sp-status').textContent = 'Authenticated';
-        document.getElementById('sp-status').style.color = 'var(--success-color)';
-    }
-
-    function syncToDevice() {
-        // Collect screen order
-        const payload = activeScreens.map(s => s.id);
-        
-        // Find custom image data if it exists
-        const customScreen = activeScreens.find(s => s.id === 'custom');
-        const customImageBase64 = customScreen ? customScreen.imageData : null;
-
-        console.log("Order payload to ESP32:", payload);
-        if (customImageBase64) {
-            console.log("Custom image ready to POST as binary blob.");
-        }
-        
+    async function syncToDevice() {
         const btn = document.querySelector('.fab-save');
-        const originalText = btn.innerHTML;
-        btn.innerHTML = 'Saved!';
-        btn.style.backgroundColor = 'var(--success-color)';
-        
-        setTimeout(() => {
-            btn.innerHTML = originalText;
-            btn.style.backgroundColor = 'var(--accent-color)';
-        }, 2000);
+        btn.innerHTML = 'Saving...';
+        btn.disabled = true;
+
+        const payload = {
+            spotify_exclusive: document.getElementById('spotify-exclusive-toggle').checked,
+            brightness: parseInt(document.getElementById('brightness-slider').value, 10),
+            orientation: parseInt(document.getElementById('orientation-select').value, 10),
+            screens: [
+                ...activeScreens.map(s => ({
+                    id: s.id,
+                    active: true,
+                    duration: s.duration,
+                    theme: s.theme
+                })),
+                ...libraryScreens.map(s => ({
+                    id: s.id,
+                    active: false,
+                    duration: s.duration,
+                    theme: s.theme
+                }))
+            ]
+        };
+
+        try {
+            const res = await fetch('/api/screens', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (!res.ok) throw new Error("Failed to save");
+
+            btn.innerHTML = 'Saved!';
+            btn.style.backgroundColor = 'var(--success-color)';
+        } catch (e) {
+            console.error("Save error:", e);
+            btn.innerHTML = 'Error!';
+            btn.style.backgroundColor = 'var(--danger-color)';
+        } finally {
+            setTimeout(() => {
+                btn.innerHTML = 'Save';
+                btn.style.backgroundColor = 'var(--accent-color)';
+                btn.disabled = false;
+            }, 2000);
+        }
     }
 
-    renderLists();
+    document.addEventListener('DOMContentLoaded', loadConfig);
 </script>
 
 </body>

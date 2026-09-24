@@ -13,6 +13,8 @@ enum http_client_method
     HTTP_CLIENT_DELETE = HTTP_METHOD_DELETE
 };
 
+void http_client_init();
+
 esp_err_t http_client_request(const char *url,
                               enum http_client_method method,
                               const char *auth_header,

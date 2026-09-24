@@ -1,9 +1,14 @@
 #include "screen_scheduler.h"
 
+#include "ui_task.h"
+
 #include "esp_timer.h"
 #include <string.h>
 
-#define TRANSITION_DURATION_MS 2000
+#define MAX_REGISTERED_SCREENS 8
+
+static struct screen *s_registry[MAX_REGISTERED_SCREENS];
+static size_t s_registry_count = 0;
 
 enum sched_state
 {
@@ -114,27 +119,68 @@ void sched_tick(int64_t now_us, float dt_ms)
     }
 }
 
+void sched_register_screen(struct screen *scr)
+{
+    if (!scr || s_registry_count >= MAX_REGISTERED_SCREENS)
+        return;
+    for (size_t i = 0; i < s_registry_count; i++)
+    {
+        if (s_registry[i] == scr)
+            return;
+    }
+    s_registry[s_registry_count++] = scr;
+}
+
+size_t sched_get_all_screens(struct screen **out_screens, size_t max_count)
+{
+    size_t count = (s_registry_count < max_count) ? s_registry_count : max_count;
+    for (size_t i = 0; i < count; i++)
+    {
+        out_screens[i] = s_registry[i];
+    }
+    return count;
+}
+
+bool sched_is_screen_active(struct screen *scr)
+{
+    if (!scr)
+        return false;
+
+    // If checking the Spotify screen, its active status is determined by user preference
+    if (scr == ui_task_get_spotify_screen())
+    {
+        return ui_task_get_spotify_enabled();
+    }
+
+    return list_contains(&g_sched.screens, &scr->node);
+}
+
 struct screen *sched_get_screen_by_name(const char *target)
 {
-    if (list_is_empty(&g_sched.screens))
+    if (!target)
         return NULL;
-
-    struct screen *current = g_sched.current_scr;
-    do
+    for (size_t i = 0; i < s_registry_count; i++)
     {
-        if (current->name && strcmp(current->name, target) == 0)
+        if (s_registry[i]->name && strcmp(s_registry[i]->name, target) == 0)
         {
-            return current;
+            return s_registry[i];
         }
-        current = CONTAINER_OF(current->node.next, struct screen, node);
-    } while (current != g_sched.current_scr);
-
+    }
     return NULL;
 }
 
 void sched_add_screen(struct screen *new_screen)
 {
-    list_push_back(&g_sched.screens, &new_screen->node);
+    if (!new_screen)
+        return;
+
+    // Auto-register in the master list so the web server knows about it!
+    sched_register_screen(new_screen);
+
+    if (!list_contains(&g_sched.screens, &new_screen->node))
+    {
+        list_push_back(&g_sched.screens, &new_screen->node);
+    }
 
     if (g_sched.current_scr == NULL)
     {

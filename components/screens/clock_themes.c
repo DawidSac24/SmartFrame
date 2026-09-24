@@ -30,7 +30,6 @@ static void get_time_strings(char *time_str, char *date_full, char *day_str, cha
 }
 
 // DIGITAL THEMES
-
 static void draw_digital_default(struct theme *self, struct screen *parent, float dt_ms)
 {
     char time_str[8];
@@ -68,18 +67,34 @@ static void draw_date_left(struct theme *self, struct screen *parent, float dt_m
     gfx_draw_line(2, 6, 2, 55, 100, 100, 100);
 }
 
+static void draw_clk_split(struct theme *self, struct screen *parent, float dt_ms)
+{
+    time_t now;
+    time(&now);
+    struct tm timeinfo;
+    localtime_r(&now, &timeinfo);
+    char hr_str[4];
+    snprintf(hr_str, sizeof(hr_str), "%02d", timeinfo.tm_hour);
+    char mn_str[4];
+    snprintf(mn_str, sizeof(mn_str), "%02d", timeinfo.tm_min);
+
+    gfx_draw_text(24, 14, 200, 200, 255, hr_str, FONT_8x16);
+    gfx_draw_text(24, 34, 255, 200, 200, mn_str, FONT_8x16);
+}
+
 static const struct theme_vtable vt_def = {.draw = draw_digital_default};
 static const struct theme_vtable vt_def_small = {.draw = draw_digital_small};
 static const struct theme_vtable vt_date_cen = {.draw = draw_date_center};
 static const struct theme_vtable vt_date_left = {.draw = draw_date_left};
+static const struct theme_vtable vt_split = {.draw = draw_clk_split};
 
 static struct theme th_def = {.name = "default", .vtable = &vt_def};
 static struct theme th_def_small = {.name = "default_small", .vtable = &vt_def_small};
 static struct theme th_date_cen = {.name = "date_center", .vtable = &vt_date_cen};
 static struct theme th_date_left = {.name = "date_left", .vtable = &vt_date_left};
+static struct theme th_split = {.name = "split", .vtable = &vt_split};
 
 // ANALOG THEMES
-
 struct theme_analog
 {
     struct theme base;
@@ -98,40 +113,33 @@ static void draw_analog(struct theme *base, struct screen *parent, float dt_ms)
 {
     struct theme_analog *self = (struct theme_analog *)base;
     time_t now;
-    struct tm timeinfo;
     time(&now);
+    struct tm timeinfo;
     localtime_r(&now, &timeinfo);
-
     int cx = 32, cy = 32;
 
     for (int i = 0; i < 12; i++)
     {
         float angle = i * (M_PI / 6.0f);
-
         if (self->has_numbers)
         {
             char num_str[3];
             snprintf(num_str, sizeof(num_str), "%d", i == 0 ? 12 : i);
-
-            float dx = sin(angle);
-            float dy = cos(angle);
-
-            // PROJECT NUMBERS INTO A SQUARE OR CIRCLE
+            float dx = sin(angle), dy = cos(angle);
             if (self->is_square)
             {
                 float max_val = fmax(fabs(dx), fabs(dy));
-                float scale = 25.0f / max_val; // Pushes coordinates into a square box
+                float scale = 25.0f / max_val;
                 dx *= scale;
                 dy *= scale;
             }
             else
             {
-                dx *= 25.0f; // Standard round radius
+                dx *= 25.0f;
                 dy *= 25.0f;
             }
-
-            int nx = cx + (int)dx - (i >= 10 ? 5 : 2); // Center text horizontally
-            int ny = cy - (int)dy - 4;                 // Center text vertically
+            int nx = cx + (int)dx - (i >= 10 ? 5 : 2);
+            int ny = cy - (int)dy - 4;
             uint8_t c = (i % 3 == 0) ? 255 : 100;
             gfx_draw_text(nx, ny, c, c, c, num_str, FONT_5x8);
         }
@@ -144,7 +152,7 @@ static void draw_analog(struct theme *base, struct screen *parent, float dt_ms)
                           cx + (int)(scale_outer * sin(angle)), cy - (int)(scale_outer * cos(angle)), 200, 200, 200);
         }
         else
-        { // Round ticks
+        {
             int r_inner = (i % 3 == 0) ? 24 : 27;
             int r_outer = 31;
             gfx_draw_line(cx + (int)(r_inner * sin(angle)), cy - (int)(r_inner * cos(angle)),
@@ -152,7 +160,6 @@ static void draw_analog(struct theme *base, struct screen *parent, float dt_ms)
         }
     }
 
-    // Draw Hands
     float hr_angle = (timeinfo.tm_hour % 12) * (M_PI / 6.0f) + (timeinfo.tm_min * (M_PI / 360.0f));
     float min_angle = timeinfo.tm_min * (M_PI / 30.0f) + (timeinfo.tm_sec * (M_PI / 1800.0f));
     float sec_angle = timeinfo.tm_sec * (M_PI / 30.0f);
@@ -171,12 +178,12 @@ static struct theme_analog th_a_sq = {.base = {.name = "square", .vtable = &vt_a
 static struct theme_analog th_a_sq_num = {.base = {.name = "square_num", .vtable = &vt_analog}, .is_square = true, .has_numbers = true};
 
 // REGISTRY
-
 static const struct theme *s_all_clock_themes[] = {
     &th_def,
     &th_def_small,
     &th_date_cen,
     &th_date_left,
+    &th_split,
     &th_a_rnd.base,
     &th_a_rnd_num.base,
     &th_a_sq.base,
@@ -190,9 +197,7 @@ const struct theme *clock_theme_get(const char *name)
     for (size_t i = 0; i < sizeof(s_all_clock_themes) / sizeof(s_all_clock_themes[0]); i++)
     {
         if (strcmp(s_all_clock_themes[i]->name, name) == 0)
-        {
             return s_all_clock_themes[i];
-        }
     }
-    return &th_def; // Fallback
+    return &th_def;
 }

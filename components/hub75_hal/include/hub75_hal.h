@@ -16,6 +16,12 @@ extern "C"
 
     esp_err_t hub75_hal_init(void);
 
+    void hub75_hal_set_brightness(uint8_t brightness);
+    uint8_t hub75_hal_get_brightness(void);
+
+    void hub75_hal_set_rotation(uint8_t rotation);
+    uint8_t hub75_hal_get_rotation(void);
+
     void hub75_hal_draw_pixels(uint16_t x, uint16_t y, uint16_t w, uint16_t h, const uint8_t *buffer);
     void hub75_hal_draw_pixel(uint16_t x, uint16_t y, uint8_t r, uint8_t g, uint8_t b);
     void hub75_hal_fill(int16_t x, uint16_t y, uint16_t w, uint16_t h, uint8_t r, uint8_t g, uint8_t b);

@@ -38,3 +38,24 @@ static inline bool sv_equals_cstr(struct string_view sv, const char *cstr)
         return false;
     return memcmp(sv.data, cstr, sv.length) == 0;
 }
+
+static inline bool json_extract_string(const char *json, const char *key, struct string_view *out_view)
+{
+    // Look for the exact key wrapped in quotes
+    char search_key[64];
+    snprintf(search_key, sizeof(search_key), "\"%s\":\"", key);
+
+    const char *start = strstr(json, search_key);
+    if (!start)
+        return false;
+
+    start += strlen(search_key); // Move pointer past the key and the colon-quote
+
+    const char *end = strchr(start, '"'); // Find the closing quote
+    if (!end)
+        return false;
+
+    out_view->data = start;
+    out_view->length = end - start;
+    return true;
+}

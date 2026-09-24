@@ -69,3 +69,19 @@ void weather_set_override(const struct weather_dto *forced_dto)
         s_override_active = false;
     }
 }
+
+void weather_set_icon_state(enum wea_icon_state state)
+{
+    if (xSemaphoreTake(s_weather_mutex, portMAX_DELAY))
+    {
+        if (s_override_active)
+        {
+            s_override_dto.icon_state = state;
+        }
+        else
+        {
+            s_weather_data.icon_state = state;
+        }
+        xSemaphoreGive(s_weather_mutex);
+    }
+}
