@@ -63,6 +63,6 @@ void app_main(void)
   setenv("TZ", "CET-1CEST,M3.5.0,M10.5.0/3", 1);
   tzset();
 
-  weather_init(LONGITUDE, LATITUDE, 6144, PRIO_WEATHER_API);
+  weather_init(LATITUDE, LONGITUDE, 6144, PRIO_WEATHER_API);
   spotify_init(8192, PRIO_SPOTIFY_API);
 }

@@ -32,6 +32,7 @@ struct spotify_track_dto
 };
 
 esp_err_t spotify_init(uint32_t stack_size, UBaseType_t priority);
+esp_err_t spotify_clear();
 enum sp_api_state spotify_get_state();
 
 esp_err_t spotify_get_track_info(struct spotify_track_dto *out_track);

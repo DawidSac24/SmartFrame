@@ -57,6 +57,9 @@ void wifi_init(void)
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
     ESP_ERROR_CHECK(esp_wifi_start());
 
+    int8_t power = 78; // 78 corresponds to roughly 19.5dBm
+    esp_wifi_set_max_tx_power(power);
+
     ESP_ERROR_CHECK(mdns_init());
     ESP_ERROR_CHECK(mdns_hostname_set(HOSTNAME));
     ESP_ERROR_CHECK(mdns_instance_name_set("Smart Frame Web Server"));

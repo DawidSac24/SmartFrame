@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include "esp_log.h"
 
 // --- DECODING STATE & LOGIC ---
 static uint8_t *s_custom_rgba = NULL; // Just a pointer now! No 16KB static array.
@@ -18,19 +19,51 @@ static void trigger_custom_decode(void)
 
     unsigned error = lodepng_decode32_file(&image, &width, &height, "/fs/custom.png");
 
-    if (!error && width == 64 && height == 64)
+    // Check if it's successful AND at least 64x64
+    if (!error && width >= 64 && height >= 64)
     {
-        // If we already have an old image loaded, free it first
         if (s_custom_rgba != NULL)
         {
             free(s_custom_rgba);
         }
 
-        // Keep the pointer lodepng gave us! Zero extra memory used.
-        s_custom_rgba = image;
+        if (width == 64 && height == 64)
+        {
+            // Fast path: Webpage already sent a perfect 64x64
+            s_custom_rgba = image;
+        }
+        else
+        {
+            // Direct API path: Image is large, let's crop the exact center 64x64
+            s_custom_rgba = malloc(64 * 64 * 4);
+            if (!s_custom_rgba)
+            {
+                free(image);
+                return; // Fail gracefully if out of memory
+            }
+
+            int start_x = (width - 64) / 2;
+            int start_y = (height - 64) / 2;
+
+            for (int y = 0; y < 64; y++)
+            {
+                for (int x = 0; x < 64; x++)
+                {
+                    int src_idx = ((start_y + y) * width + (start_x + x)) * 4;
+                    int dst_idx = (y * 64 + x) * 4;
+
+                    s_custom_rgba[dst_idx] = image[src_idx];         // R
+                    s_custom_rgba[dst_idx + 1] = image[src_idx + 1]; // G
+                    s_custom_rgba[dst_idx + 2] = image[src_idx + 2]; // B
+                    s_custom_rgba[dst_idx + 3] = image[src_idx + 3]; // A
+                }
+            }
+            free(image); // We kept the center, delete the massive original!
+        }
+
         s_has_decoded = true;
         custom_img_set_state(CUSTOM_IMG_DECODED);
-        printf("Custom PNG decoded successfully!\n");
+        ESP_LOGI("cimg", "Custom PNG decoded & cropped successfully!");
     }
     else
     {
@@ -38,9 +71,13 @@ static void trigger_custom_decode(void)
         custom_img_set_state(CUSTOM_IMG_FAILED);
         if (error)
         {
-            printf("Custom PNG decode failed (Error %u)\n", error);
+            ESP_LOGE("cimg", "Custom PNG decode failed (Error %u)", error);
         }
-        // Only free the image if the decode failed/was wrong size
+        else if (width < 64 || height < 64)
+        {
+            ESP_LOGE("cimg", "Custom PNG too small! Must be at least 64x64.");
+        }
+
         if (image)
             free(image);
     }

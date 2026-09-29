@@ -20,7 +20,6 @@ static esp_err_t
 cmd_spotify(int argc, char **argv);
 esp_err_t sp_cmd_fetch_track(void);
 esp_err_t sp_cmd_print(void);
-esp_err_t sp_cmd_clear(void);
 
 void sp_cmd_register(void)
 {
@@ -52,7 +51,7 @@ esp_err_t sp_cmd_dispatch(enum sp_cmd cmd)
     case SP_CMD_PRINT:
         return sp_cmd_print();
     case SP_CMD_CLEAR:
-        return sp_cmd_clear();
+        return spotify_clear();
     default:
         ESP_LOGE(TAG, "Unkown command received: %d", cmd);
         return ESP_ERR_INVALID_ARG;
@@ -104,7 +103,7 @@ esp_err_t sp_cmd_fetch_track(void)
     return sp_manager_fetch_and_save_track();
 }
 
-esp_err_t sp_cmd_clear(void)
+esp_err_t spotify_clear()
 {
     sp_storage_set_refresh_token("");
     sp_auth_init();

@@ -5,7 +5,7 @@
 #include "esp_log.h"
 #include "http_client.h"
 
-#define WEATHER_API_URL "https://api.openweathermap.org/data/2.5/weather?lat=%.4f&lon=%.4f&appid=%s&units=metric"
+#define WEATHER_API_URL "https://api.openweathermap.org/data/2.5/weather?lat=%.5f&lon=%.5f&appid=%s&units=metric"
 static const char *TAG = "wea_client";
 
 esp_err_t wea_client_fetch_weather(float lat, float lon, char **out_json)

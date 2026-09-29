@@ -8,7 +8,7 @@ static const char *TAG = "hub75_hal";
 Hub75Driver *dma_display = nullptr;
 
 // State tracking
-static uint8_t s_brightness = 128;
+static uint8_t s_brightness = 50;
 static uint8_t s_rotation = 0; // 0=0°, 1=90°, 2=180°, 3=270°
 
 esp_err_t hub75_hal_init(void)

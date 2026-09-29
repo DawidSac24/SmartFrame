@@ -59,22 +59,39 @@ static void draw_sp_square(struct theme *base, struct screen *parent, float dt_m
     }
 
     uint8_t r, g, b;
-    uint32_t tot_r = 0, tot_g = 0, tot_b = 0;
-    int samples = 0;
+    uint8_t bg_r = 0, bg_g = 0, bg_b = 0;
+
+    // --- NEW: Dominant Color Calculation ---
+    // A 10-bit histogram (R:3, G:4, B:3) takes exactly 1024 bytes on the stack.
+    // We sample every 4th pixel (256 samples), so a uint8_t array is perfectly sized.
+    uint8_t hist[1024] = {0};
+    uint8_t max_count = 0;
+    uint16_t dominant_bin = 0;
+
     for (int y = 0; y < 64; y += 4)
     {
         for (int x = 0; x < 64; x += 4)
         {
             sp_theme_get_pixel(x, y, &r, &g, &b);
-            tot_r += r;
-            tot_g += g;
-            tot_b += b;
-            samples++;
+
+            // Compress 24-bit color into 10-bit
+            uint16_t bin = ((r >> 5) << 7) | ((g >> 4) << 3) | (b >> 5);
+            hist[bin]++;
+
+            // Track the winner dynamically
+            if (hist[bin] > max_count)
+            {
+                max_count = hist[bin];
+                dominant_bin = bin;
+            }
         }
     }
-    uint8_t bg_r = tot_r / samples;
-    uint8_t bg_g = tot_g / samples;
-    uint8_t bg_b = tot_b / samples;
+
+    // Reconstruct the winning 10-bit color back to 24-bit
+    bg_r = (((dominant_bin >> 7) & 0x07) << 5) | 16;
+    bg_g = (((dominant_bin >> 3) & 0x0F) << 4) | 8;
+    bg_b = ((dominant_bin & 0x07) << 5) | 16;
+    // ----------------------------------------
 
     for (int y = 0; y < 64; y++)
     {
@@ -107,6 +124,7 @@ static void draw_sp_square(struct theme *base, struct screen *parent, float dt_m
     uint8_t shadow_c = (text_c == 255) ? 0 : 255;
     gfx_draw_text(text_x + 1, art_size + 5, shadow_c, shadow_c, shadow_c, self->last_track_name, FONT_5x8);
     gfx_draw_text(text_x, art_size + 4, text_c, text_c, text_c, self->last_track_name, FONT_5x8);
+
     if (!track.is_playing)
     {
         for (int i = 0; i < 4; i++)

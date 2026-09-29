@@ -288,25 +288,6 @@
                         </select>
                     </div>
                 </div>
-
-                <div class="list-item">
-                    <div class="item-info">
-                        <h3>Spotify Exclusivity</h3>
-                        <p>Take over display when track is playing</p>
-                    </div>
-                    <div>
-                        <input type="checkbox" id="spotify-exclusive-toggle">
-                    </div>
-                </div>
-                <div class="list-item">
-                    <div class="item-info">
-                        <h3>Spotify Connection</h3>
-                        <p id="sp-status" style="color: var(--text-muted);">Manage authorization</p>
-                    </div>
-                    <div class="controls">
-                        <button class="primary" onclick="window.location.href='/login'">Connect</button>
-                    </div>
-                </div>
             </div>
         </details>
     </main>
@@ -317,11 +298,11 @@
 <script>
     let activeScreens = [];
     let libraryScreens = [];
-    let spotifyExclusive = true;
+    let spotifyExclusive = true; // Global state for the dynamic toggle
 
     const screenDescriptions = {
-        spotify: 'Displays current playback & animated vinyl art',
-        weather: 'Live temperature, conditions & animated icons',
+        spotify: 'Displays currently played track',
+        weather: 'Live temperature & conditions',
         clock: 'Digital time, seconds & date',
         custom_img: 'Custom user uploaded image'
     };
@@ -338,7 +319,6 @@
 
             // Populate Settings
             spotifyExclusive = !!data.spotify_exclusive;
-            document.getElementById('spotify-exclusive-toggle').checked = spotifyExclusive;
             
             if (data.brightness !== undefined) {
                 document.getElementById('brightness-slider').value = data.brightness;
@@ -393,6 +373,8 @@
             ).join('');
 
             const isCustom = screen.id === 'custom_img';
+            const isSpotify = screen.id === 'spotify';
+
             const vizBoxStyles = isCustom ? 'cursor: pointer; border-color: var(--accent-color);' : '';
             const vizBoxClick = isCustom ? `onclick="document.getElementById('custom-image-input').click()"` : '';
             const vizBoxTitle = isCustom ? `title="Click to upload an image"` : '';
@@ -425,7 +407,21 @@
                                 ${themeOptions}
                             </select>
                         </div>
+                        
                         ${isCustom ? `<button class="danger" onclick="clearCustomImage()" style="margin-left: auto;">Clear Image</button>` : ''}
+                        
+                        ${isSpotify ? `
+                            <div class="spotify-controls" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid rgba(255,255,255,0.1); width: 100%; display: flex; flex-direction: column; gap: 10px;">
+                                <label style="display: flex; align-items: center; gap: 8px;">
+                                    <input type="checkbox" onchange="updateSpotifyExclusive(this.checked)" ${spotifyExclusive ? 'checked' : ''}> 
+                                    Exclusive Mode (Only show when playing)
+                                </label>
+                                <div style="display: flex; gap: 10px;">
+                                    <button onclick="window.location.href='/login'" style="flex: 1; background-color: var(--success-color); color: white; border: none; padding: 0.5rem; border-radius: 0.35rem; font-weight: 500; cursor: pointer;">Connect</button>
+                                    <button class="danger" onclick="disconnectSpotify()" style="flex: 1; padding: 0.5rem; border-radius: 0.35rem; cursor: pointer;">Disconnect</button>
+                                </div>
+                            </div>
+                        ` : ''}
                     </div>
 
                     <div class="visualization-box" style="${vizBoxStyles}" ${vizBoxClick} ${vizBoxTitle}>
@@ -456,12 +452,15 @@
         });
     }
 
-    // --- NEW: Custom Image Upload Logic ---
+    // Handlers
+    function updateSpotifyExclusive(val) {
+        spotifyExclusive = val;
+    }
+
     async function uploadCustomImage() {
         const fileInput = document.getElementById('custom-image-input');
         if (!fileInput.files.length) return;
         
-        // Grab the text element inside the preview square to show progress
         const mockContent = document.getElementById('mock-custom_img');
         const originalHTML = mockContent ? mockContent.innerHTML : "Custom Image";
 
@@ -472,12 +471,19 @@
         const canvas = document.createElement('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Force exactly 64x64 resolution
         canvas.width = 64;
         canvas.height = 64;
 
         img.onload = async () => {
-            ctx.drawImage(img, 0, 0, 64, 64);
+            // 1. Find the shortest side to make a perfect square
+            const size = Math.min(img.width, img.height);
+            
+            // 2. Calculate the exact center coordinates
+            const startX = (img.width - size) / 2;
+            const startY = (img.height - size) / 2;
+            
+            // 3. Crop the center and scale it cleanly to 64x64
+            ctx.drawImage(img, startX, startY, size, size, 0, 0, 64, 64);
             
             canvas.toBlob(async (blob) => {
                 if (mockContent) mockContent.innerHTML = "Uploading...";
@@ -497,7 +503,6 @@
                     if (mockContent) mockContent.innerHTML = "<span style='color: var(--danger-color);'>Error</span>";
                 }
                 
-                // Reset the text and clear the input so you can upload another file later
                 setTimeout(() => { 
                     if (mockContent) mockContent.innerHTML = originalHTML; 
                     fileInput.value = ""; 
@@ -506,6 +511,16 @@
             }, 'image/png');
         };
         img.src = URL.createObjectURL(file);
+    }
+
+    async function disconnectSpotify() {
+        if (!confirm("Are you sure you want to disconnect Spotify?")) return;
+        try {
+            await fetch('/api/spotify/clear');
+            location.reload(); 
+        } catch (e) {
+            alert("Error disconnecting from Spotify.");
+        }
     }
 
     async function clearCustomImage() {
@@ -570,7 +585,7 @@
         btn.disabled = true;
 
         const payload = {
-            spotify_exclusive: document.getElementById('spotify-exclusive-toggle').checked,
+            spotify_exclusive: spotifyExclusive,
             brightness: parseInt(document.getElementById('brightness-slider').value, 10),
             orientation: parseInt(document.getElementById('orientation-select').value, 10),
             screens: [

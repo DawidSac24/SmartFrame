@@ -81,6 +81,17 @@ static esp_err_t spotify_callback_handler(httpd_req_t *req)
     return ESP_ERR_NOT_ALLOWED;
 }
 
+esp_err_t spotify_clear_handler(httpd_req_t *req)
+{
+    ESP_LOGI("web_server", "Clearing Spotify credentials...");
+    spotify_clear();
+
+    httpd_resp_set_status(req, "302 Found");
+    httpd_resp_set_hdr(req, "Location", "/");
+    httpd_resp_send(req, NULL, 0);
+    return ESP_OK;
+}
+
 void register_spotify_uri_handler(httpd_handle_t server)
 {
     static const httpd_uri_t uri_login = {
@@ -95,6 +106,13 @@ void register_spotify_uri_handler(httpd_handle_t server)
         .handler = spotify_callback_handler,
         .user_ctx = NULL};
 
+    static const httpd_uri_t uri_clear_spotify = {
+        .uri = "/api/spotify/clear",
+        .method = HTTP_GET,
+        .handler = spotify_clear_handler,
+        .user_ctx = NULL};
+
     httpd_register_uri_handler(server, &uri_login);
     httpd_register_uri_handler(server, &uri_callback);
+    httpd_register_uri_handler(server, &uri_clear_spotify);
 }
