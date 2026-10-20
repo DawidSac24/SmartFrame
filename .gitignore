@@ -79,3 +79,7 @@ Desktop.ini
 
 components/esp/v6.0.2/esp-idf/
 **/secrets.h
+
+.docs
+
+.github

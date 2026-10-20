@@ -44,5 +44,83 @@
   },
   "[c]": {
     "editor.defaultFormatter": "ms-vscode.cpptools"
-  }
+  },
+   // Les nouvelles sessions démarrent en permissions manuelles.
+  // Ne pas activer Allow all, Autopilot ou l'auto-approbation globale.
+  "chat.permissions.default": "default",
+  "chat.tools.global.autoApprove": false,
+
+  "chat.tools.terminal.enableAutoApprove": true,
+  "chat.tools.terminal.ignoreDefaultAutoApproveRules": false,
+  "chat.tools.terminal.blockDetectedFileWrites": "outsideWorkspace",
+
+  "chat.tools.terminal.autoApprove": {
+    // Exploration locale en lecture seule.
+    "pwd": true,
+    "ls": true,
+    "rg": true,
+    "grep": true,
+    "head": true,
+    "tail": true,
+    "wc": true,
+    "cat": true,
+
+    // Consultation de Git sans modification du dépôt.
+    "/^git (status|diff|log|show|rev-parse|ls-files)(\\s|$)/": true,
+
+    // Contrôles locaux prévus par le projet Gesta.
+    "/^npm (test|run (lint|typecheck|test|build|check|setup|dev))(\\s|$)/": true,
+
+    // Ces commandes restent possibles, mais exigent une décision explicite.
+    "/^npm (ci|install|uninstall|update)(\\s|$)/": false,
+    "/^npx(\\s|$)/": false,
+    "/^node(\\s|$)/": false,
+    "/^(curl|wget)(\\s|$)/": false,
+    "/^gh(\\s|$)/": false,
+    "/^git (add|commit|push|pull|fetch|checkout|switch|restore|reset|clean|merge|rebase|cherry-pick|revert|stash|tag|branch)(\\s|$)/": false,
+    "/^(rm|rmdir|del|sudo|chmod|chown|kill)(\\s|$)/": false,
+    "/^Remove-Item\\b/i": false
+  },
+
+  // Les modifications ordinaires dans le workspace sont autorisées.
+  // Les fichiers sensibles restent soumis à approbation.
+  "chat.tools.edits.autoApprove": {
+    "**/*": true,
+    "**/.env": false,
+    "**/.env.*": false,
+    "**/.git/**": false,
+    "**/.vscode/*.json": false,
+    "**/package-lock.json": false
+  },
+
+  // La sandbox accorde automatiquement la lecture et l'écriture dans le
+  // répertoire de travail. Aucun chemin extérieur supplémentaire n'est ajouté.
+  "chat.agent.sandbox.enabled": "on",
+  "chat.agent.sandbox.fileSystem.userConfiguredPaths": {
+    "readwritePaths": [],
+    "readonlyPaths": [],
+    "deniedPaths": []
+  },
+
+  // Nécessaire pour lancer Node, npm, TypeScript et les tests installés.
+  "chat.agent.sandbox.fileSystem.allowDevToolAccess": true,
+
+  // Le réseau externe est bloqué. Le réseau local reste disponible pour
+  // l'application sur localhost:3000 et localhost:5173.
+  "chat.agent.sandbox.network.allowNetwork": false,
+  "chat.agent.sandbox.network.allowLocalNetwork": true,
+
+  // Une commande incompatible avec la sandbox est proposée à l'acceptation
+  "chat.agent.sandbox.allowUnsandboxedCommands": true,
+
+  // Ne pas transmettre les identifiants Git ou GitHub aux processus sandboxés.
+  "chat.agent.sandbox.credentials.authenticategit": false,
+  "chat.agent.sandbox.credentials.authenticategh": false,
+
+  // Les processus auxiliaires lancés par Copilot restent confinés.
+  "chat.agent.sandbox.mcpServers": true,
+  "chat.agent.sandbox.lspServers": true,
+
+  // Bloque également les outils Fetch et navigateur intégrés.
+  "chat.agent.networkFilter": true
 }
