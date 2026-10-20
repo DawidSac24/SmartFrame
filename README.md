@@ -12,7 +12,6 @@
 - [My code](#my-code)
 - [Difficulties](#difficulties)
 - [Future improvements](#future-improvements)
-- [Parts list](#parts-list)
 - [Build the firmware](#build-the-firmware)
 
 ## Overview
@@ -88,13 +87,6 @@ The device needs to update the screen while network requests are happening. I se
 ## Future improvements
 
 The core project is working, but there are still things I would like to improve. I am working on making some animations smoother and adding the configuration options that are still missing from the web dashboard. I would also like to finish a 3D model of the frame.
-
-## Parts list
-
-### Electronics
-
-- 1 × Adafruit Portal S3
-- 1 × 64×64 LED matrix
 
 ## Build the firmware
 
