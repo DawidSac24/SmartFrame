@@ -1,3 +1,9 @@
+
+https://github.com/user-attachments/assets/8860124b-c489-4bed-9f14-7a8d0917e0dc
+
+<img width="1180" height="1572" alt="weather_screen" src="https://github.com/user-attachments/assets/aef96a5f-ad0a-4bb6-b3e3-72f59c2fcd6b" />
+
+
 # SmartFrame
 
 ## Summary
