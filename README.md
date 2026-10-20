@@ -1,10 +1,5 @@
-
-https://github.com/user-attachments/assets/8860124b-c489-4bed-9f14-7a8d0917e0dc
-
-<img width="1180" height="1572" alt="weather_screen" src="https://github.com/user-attachments/assets/aef96a5f-ad0a-4bb6-b3e3-72f59c2fcd6b" />
-
-
 # SmartFrame
+https://github.com/user-attachments/assets/8860124b-c489-4bed-9f14-7a8d0917e0dc
 
 ## Summary
 
@@ -27,6 +22,9 @@ SmartFrame is an IoT-connected 64×64 LED matrix built with an Adafruit Portal S
 For more information and a demonstration, see [SmartFrame on my portfolio](https://dawid-sac.dev/smartframe).
 
 ## The project
+
+<img width="1180" height="1572" alt="weather_screen" src="https://github.com/user-attachments/assets/aef96a5f-ad0a-4bb6-b3e3-72f59c2fcd6b" />
+
 
 SmartFrame connects to Wi-Fi and gets information from online services. The firmware chooses which screen to show and draws it on the LED matrix. A small web dashboard is hosted by the device, so it can be accessed from the local network.
 
