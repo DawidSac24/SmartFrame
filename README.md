@@ -1,8 +1,5 @@
 # SmartFrame
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-SmartFrame-blue)](https://dawid-sac.dev/smartframe)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Dawid%20Sac-blue)](https://www.linkedin.com/in/dawid-sac/)
-
 ## Summary
 
 - [Overview](#overview)
@@ -18,6 +15,7 @@
 
 SmartFrame is an IoT-connected 64×64 LED matrix built with an Adafruit Portal S3. It cycles through screens showing the current time, local weather, and live Spotify playback, including downsampled album art when a connected account is active. The device hosts a local web dashboard where users can manage screens and upload custom images.
 
+[!NOTE]
 The core project is functional, but I am still working on smoother animated screens and adding configuration options to the dashboard. I made SmartFrame as a student project to learn about embedded programming, APIs, and connecting hardware to online services.
 
 For more information and a demonstration, see [SmartFrame on my portfolio](https://dawid-sac.dev/smartframe).
@@ -64,7 +62,7 @@ The screens are managed by a scheduler. The firmware uses separate FreeRTOS task
 
 ## My code
 
-I organized the firmware into ESP-IDF components. The display, screen scheduler, storage, Wi-Fi, web server, and API integrations are kept in separate parts of the project. This made it easier to work on one feature without putting the whole application in one large file.
+I organized the firmware into ESP-IDF components. The display, screen scheduler, storage, Wi-Fi, web server, and API integrations are kept in separate parts of the project.
 
 One of the more interesting parts was the screen scheduler. It rotates through screens and handles transitions, while allowing Spotify to take priority when music is playing. The clock and weather screens can continue to be shown when Spotify is not active.
 
@@ -86,7 +84,7 @@ The device needs to update the screen while network requests are happening. I se
 
 ## Future improvements
 
-The core project is working, but there are still things I would like to improve. I am working on making some animations smoother and adding the configuration options that are still missing from the web dashboard. I would also like to finish a 3D model of the frame.
+The core project is working, but there are still things I would like to improve. I am working on making some animations smoother and adding the configuration options that are still missing from the web dashboard.
 
 ## Build the firmware
 
