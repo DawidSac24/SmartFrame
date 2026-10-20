@@ -15,8 +15,8 @@
 
 SmartFrame is an IoT-connected 64×64 LED matrix built with an Adafruit Portal S3. It cycles through screens showing the current time, local weather, and live Spotify playback, including downsampled album art when a connected account is active. The device hosts a local web dashboard where users can manage screens and upload custom images.
 
-[!NOTE]
-The core project is functional, but I am still working on smoother animated screens and adding configuration options to the dashboard. I made SmartFrame as a student project to learn about embedded programming, APIs, and connecting hardware to online services.
+> [!NOTE]
+> The core project is functional, but I am still working on smoother animated screens and adding configuration options to the dashboard. I made SmartFrame as a student project to learn about embedded programming, APIs, and connecting hardware to online services.
 
 For more information and a demonstration, see [SmartFrame on my portfolio](https://dawid-sac.dev/smartframe).
 
